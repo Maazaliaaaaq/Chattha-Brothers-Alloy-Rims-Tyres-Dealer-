@@ -1,0 +1,6 @@
+{
+  "name": "Chattha Brothers Inventory",
+  "description": "Stock tracking, low inventory alerts, and analytics for Chattha Brothers Alloy Rims & Tyres Dealer",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
