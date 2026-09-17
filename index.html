@@ -9,9 +9,15 @@
     <meta property="og:description" content="Stock tracking, low inventory alerts, and analytics for Chattha Brothers Alloy Rims & Tyres Dealer" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="./assets/index.css" />
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      if (window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:') {
+        import('./assets/index.js').catch(console.error);
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
