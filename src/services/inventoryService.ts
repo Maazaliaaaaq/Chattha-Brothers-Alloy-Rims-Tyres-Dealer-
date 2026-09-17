@@ -49,6 +49,13 @@ export function subscribeToInventory(
   onItemsChange: (items: InventoryItem[]) => void,
   onError?: (err: Error) => void
 ): () => void {
+  if (!db) {
+    setSyncStatus('offline');
+    const local = loadInventory();
+    onItemsChange(local);
+    return () => {};
+  }
+
   const itemsCollection = collection(db, 'items');
   setSyncStatus('connecting');
 
@@ -95,7 +102,7 @@ export function subscribeToInventory(
     },
     (error) => {
       console.error('Firestore real-time subscription error:', error);
-      setSyncStatus('error');
+      setSyncStatus('offline');
       // Fallback to local cache
       const local = loadInventory();
       onItemsChange(local);
@@ -110,9 +117,10 @@ export function subscribeToInventory(
  * Seeds or resets items in Firestore
  */
 export async function seedInventory(itemsToSeed: InventoryItem[] = INITIAL_ITEMS): Promise<void> {
+  if (!db) return;
   const batch = writeBatch(db);
   itemsToSeed.forEach((item) => {
-    const itemRef = doc(db, 'items', item.id);
+    const itemRef = doc(db!, 'items', item.id);
     batch.set(itemRef, item);
   });
   await batch.commit();
@@ -122,6 +130,7 @@ export async function seedInventory(itemsToSeed: InventoryItem[] = INITIAL_ITEMS
  * Add or update an inventory item
  */
 export async function saveItemToCloud(item: InventoryItem): Promise<void> {
+  if (!db) return;
   try {
     const itemRef = doc(db, 'items', item.id);
     await setDoc(itemRef, {
@@ -143,6 +152,7 @@ export async function updateItemQuantityInCloud(
   reason: AdjustmentReason = 'Quick Adjustment',
   note?: string
 ): Promise<void> {
+  if (!db) return;
   const previousQty = item.qty;
   const change = newQty - previousQty;
   if (change === 0) return;
@@ -181,6 +191,7 @@ export async function updateItemQuantityInCloud(
  * Delete an inventory item
  */
 export async function deleteItemFromCloud(itemId: string): Promise<void> {
+  if (!db) return;
   try {
     await deleteDoc(doc(db, 'items', itemId));
   } catch (err) {
@@ -195,6 +206,10 @@ export async function deleteItemFromCloud(itemId: string): Promise<void> {
 export function subscribeToSettings(
   onSettingsChange: (settings: ShopSettings) => void
 ): () => void {
+  if (!db) {
+    onSettingsChange(DEFAULT_SETTINGS);
+    return () => {};
+  }
   const settingsDoc = doc(db, 'settings', 'shop_config');
 
   return onSnapshot(
@@ -219,6 +234,7 @@ export function subscribeToSettings(
  * Update shop settings
  */
 export async function saveSettingsToCloud(settings: ShopSettings): Promise<void> {
+  if (!db) return;
   await setDoc(doc(db, 'settings', 'shop_config'), settings);
 }
 
@@ -228,6 +244,9 @@ export async function saveSettingsToCloud(settings: ShopSettings): Promise<void>
 export function subscribeToAdjustments(
   onAdjustmentsChange: (adjustments: StockAdjustment[]) => void
 ): () => void {
+  if (!db) {
+    return () => {};
+  }
   const q = query(
     collection(db, 'adjustments'),
     orderBy('timestamp', 'desc'),
