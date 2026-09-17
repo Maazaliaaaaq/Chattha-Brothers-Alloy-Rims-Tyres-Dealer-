@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "InventoryItem": {
+      "title": "Inventory Item",
+      "description": "Tyre or rim inventory stock item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["tyre", "rim"] },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "size": { "type": "string" },
+        "condition": { "type": "string", "enum": ["New", "Used"] },
+        "tyreType": { "type": "string" },
+        "loadIndex": { "type": "string" },
+        "width": { "type": "string" },
+        "pcd": { "type": "string" },
+        "offset": { "type": "string" },
+        "finish": { "type": "string" },
+        "buyPrice": { "type": "number" },
+        "sellPrice": { "type": "number" },
+        "qty": { "type": "number" },
+        "minQty": { "type": "number" },
+        "rack": { "type": "string" },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["type", "brand", "model", "size", "condition", "buyPrice", "sellPrice", "qty", "minQty", "rack", "updatedAt"]
+    },
+    "StockAdjustment": {
+      "title": "Stock Adjustment Log",
+      "description": "Audit log of stock level changes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "itemSummary": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["tyre", "rim"] },
+        "previousQty": { "type": "number" },
+        "newQty": { "type": "number" },
+        "change": { "type": "number" },
+        "reason": { "type": "string" },
+        "note": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["itemId", "itemSummary", "itemType", "previousQty", "newQty", "change", "reason", "timestamp"]
+    },
+    "ShopSettings": {
+      "title": "Shop Settings",
+      "description": "Store branding and inventory configuration",
+      "type": "object",
+      "properties": {
+        "shopName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "currency": { "type": "string" },
+        "defaultLowStockThreshold": { "type": "number" }
+      },
+      "required": ["shopName", "currency", "defaultLowStockThreshold"]
+    }
+  },
+  "firestore": {
+    "items": {
+      "entity": "InventoryItem",
+      "description": "Collection of all tyre and rim inventory items"
+    },
+    "adjustments": {
+      "entity": "StockAdjustment",
+      "description": "Collection of inventory change logs"
+    },
+    "settings": {
+      "entity": "ShopSettings",
+      "description": "Store settings document"
+    }
+  }
+}

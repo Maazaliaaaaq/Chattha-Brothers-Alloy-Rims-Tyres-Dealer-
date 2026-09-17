@@ -1,6 +1,7 @@
 import React from 'react';
 import { InventoryItem } from '../types';
-import { Plus, CircleDot, Disc, AlertTriangle } from 'lucide-react';
+import { Plus, CircleDot, Disc, AlertTriangle, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
+import { SyncStatus } from '../services/inventoryService';
 
 interface HeaderProps {
   items: InventoryItem[];
@@ -9,6 +10,7 @@ interface HeaderProps {
   showOnlyAlerts: boolean;
   setShowOnlyAlerts: (val: boolean | ((prev: boolean) => boolean)) => void;
   onOpenAddModal: (type?: 'tyre' | 'rim') => void;
+  syncStatus?: SyncStatus;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   showOnlyAlerts,
   setShowOnlyAlerts,
   onOpenAddModal,
+  syncStatus = 'connecting',
 }) => {
   const tyreItems = items.filter((i) => i.type === 'tyre');
   const rimItems = items.filter((i) => i.type === 'rim');
@@ -33,27 +36,57 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-5xl mx-auto px-3 py-2">
         {/* Main Row: Shop Name & Add Button */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
               <CircleDot className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h1 className="text-xs font-bold text-white leading-tight">
+            <div className="min-w-0">
+              <h1 className="text-xs font-bold text-white leading-tight truncate">
                 Chattha Brothers
               </h1>
-              <p className="text-[9px] font-medium text-orange-400 leading-tight">
+              <p className="text-[9px] font-medium text-orange-400 leading-tight truncate">
                 Alloy Rims &amp; Tyres Dealer
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => onOpenAddModal(activeCategory === 'rim' ? 'rim' : 'tyre')}
-            className="px-2.5 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition"
-          >
-            <Plus className="w-3 h-3" />
-            <span>Add Stock</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Real-time Cloud Sync Pill */}
+            {syncStatus === 'connected' ? (
+              <div
+                title="Connected to Firebase Cloud Database (Real-time sync active)"
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-medium"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="hidden xs:inline sm:inline">Cloud Realtime</span>
+                <span className="xs:hidden sm:hidden">Live</span>
+              </div>
+            ) : syncStatus === 'connecting' ? (
+              <div
+                title="Connecting to Firebase Cloud..."
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-medium"
+              >
+                <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                <span className="hidden xs:inline">Syncing...</span>
+              </div>
+            ) : (
+              <div
+                title="Offline local storage mode"
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[9px]"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                <span>Offline</span>
+              </div>
+            )}
+
+            <button
+              onClick={() => onOpenAddModal(activeCategory === 'rim' ? 'rim' : 'tyre')}
+              className="px-2.5 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Add Stock</span>
+            </button>
+          </div>
         </div>
 
         {/* Quick Stock Summary Bar */}

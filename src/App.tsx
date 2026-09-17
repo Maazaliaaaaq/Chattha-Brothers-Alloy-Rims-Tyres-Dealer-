@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem, ItemType } from './types';
+import { loadInventory, saveInventory } from './utils/storage';
 import {
-  loadInventory,
-  saveInventory,
-} from './utils/storage';
+  subscribeToInventory,
+  saveItemToCloud,
+  updateItemQuantityInCloud,
+  deleteItemFromCloud,
+  onSyncStatusChange,
+  SyncStatus,
+} from './services/inventoryService';
 import { Header } from './components/Header';
 import { InventoryList } from './components/InventoryList';
 import { ItemModal } from './components/ItemModal';
@@ -15,6 +20,7 @@ export default function App() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'all' | 'tyre' | 'rim'>('tyre');
   const [showOnlyAlerts, setShowOnlyAlerts] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('connecting');
 
   // Modals state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -38,17 +44,34 @@ export default function App() {
     }, 2400);
   };
 
-  // Initial load
+  // Real-time Firebase subscription & local cache initialization
   useEffect(() => {
-    const loadedItems = loadInventory();
-    setItems(loadedItems);
-  }, []);
+    // 1. Immediately hydrate with cached local data to avoid empty flash
+    const local = loadInventory();
+    if (local && local.length > 0) {
+      setItems(local);
+    }
 
-  // Save changes to localStorage
-  const updateItemsAndPersist = (newItems: InventoryItem[]) => {
-    setItems(newItems);
-    saveInventory(newItems);
-  };
+    // 2. Track real-time sync connectivity
+    const unsubStatus = onSyncStatusChange((status) => {
+      setSyncStatus(status);
+    });
+
+    // 3. Listen to live cloud data from Firebase
+    const unsubInventory = subscribeToInventory(
+      (cloudItems) => {
+        setItems(cloudItems);
+      },
+      (err) => {
+        console.warn('Real-time sync falling back to local cache:', err);
+      }
+    );
+
+    return () => {
+      unsubStatus();
+      unsubInventory();
+    };
+  }, []);
 
   // Quick single piece +/- adjustment inline
   const handleQuickQuantityChange = (itemId: string, delta: number) => {
@@ -58,10 +81,21 @@ export default function App() {
     const newQty = Math.max(0, target.qty + delta);
     if (newQty === target.qty) return;
 
+    // Optimistic UI update
     const updatedItems = items.map((it) =>
       it.id === itemId ? { ...it, qty: newQty, updatedAt: Date.now() } : it
     );
-    updateItemsAndPersist(updatedItems);
+    setItems(updatedItems);
+    saveInventory(updatedItems);
+
+    // Sync to Firebase Cloud in real-time
+    updateItemQuantityInCloud(
+      target,
+      newQty,
+      delta > 0 ? 'Stock In / Restock' : 'Customer Sale'
+    ).catch((err) => {
+      console.error('Failed to sync qty change to cloud:', err);
+    });
 
     showToast(
       `${target.brand} (${target.size}): ${target.qty} → ${newQty} ${
@@ -78,7 +112,13 @@ export default function App() {
     const updatedItems = items.map((it) =>
       it.id === itemId ? { ...it, qty: newQty, updatedAt: Date.now() } : it
     );
-    updateItemsAndPersist(updatedItems);
+    setItems(updatedItems);
+    saveInventory(updatedItems);
+
+    // Sync to Firebase Cloud
+    updateItemQuantityInCloud(target, newQty, 'Inventory Audit Correction').catch((err) => {
+      console.error('Failed to sync adjusted qty to cloud:', err);
+    });
 
     showToast(
       `Updated ${target.brand} (${target.size}) stock to ${newQty}`
@@ -92,10 +132,20 @@ export default function App() {
   ) => {
     if (editId) {
       // Edit existing
-      const updatedItems = items.map((it) =>
-        it.id === editId ? { ...it, ...itemData, updatedAt: Date.now() } : it
-      );
-      updateItemsAndPersist(updatedItems);
+      const existing = items.find((i) => i.id === editId);
+      const updatedItem: InventoryItem = {
+        ...(existing || {}),
+        ...itemData,
+        id: editId,
+        updatedAt: Date.now(),
+      } as InventoryItem;
+
+      const updatedItems = items.map((it) => (it.id === editId ? updatedItem : it));
+      setItems(updatedItems);
+      saveInventory(updatedItems);
+
+      // Cloud save
+      saveItemToCloud(updatedItem).catch(console.error);
       showToast(`Updated ${itemData.brand} in stock`);
     } else {
       // Add new
@@ -106,7 +156,11 @@ export default function App() {
         updatedAt: Date.now(),
       };
       const updatedItems = [newItem, ...items];
-      updateItemsAndPersist(updatedItems);
+      setItems(updatedItems);
+      saveInventory(updatedItems);
+
+      // Cloud save
+      saveItemToCloud(newItem).catch(console.error);
 
       // Switch category to the added item's type so user sees it immediately
       setActiveCategory(itemData.type);
@@ -119,20 +173,25 @@ export default function App() {
     if (!itemToDelete) return;
     const target = itemToDelete;
     const updated = items.filter((i) => i.id !== target.id);
-    updateItemsAndPersist(updated);
+    setItems(updated);
+    saveInventory(updated);
+
+    // Cloud delete
+    deleteItemFromCloud(target.id).catch(console.error);
     showToast(`Deleted ${target.brand} (${target.size}) from stock`);
     setItemToDelete(null);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-14 sm:pb-6 text-[11px]">
-      {/* Top Header - No Restore Option */}
+      {/* Top Header */}
       <Header
         items={items}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         showOnlyAlerts={showOnlyAlerts}
         setShowOnlyAlerts={setShowOnlyAlerts}
+        syncStatus={syncStatus}
         onOpenAddModal={(t) => {
           setEditingItem(null);
           setInitialItemType(t || 'tyre');
