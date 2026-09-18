@@ -35,8 +35,8 @@ const StockItemEmblem: React.FC<StockItemEmblemProps> = ({ type, isOpen, classNa
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
           isOpen
-            ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/40'
-            : 'bg-slate-900 text-orange-400 border-2 border-slate-700/90 hover:border-orange-500/60'
+            ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-xs ring-2 ring-orange-400/40'
+            : 'bg-orange-50 text-orange-600 border-2 border-orange-200 hover:border-orange-400'
         } ${className}`}
         title="Tyre Size"
       >
@@ -49,8 +49,8 @@ const StockItemEmblem: React.FC<StockItemEmblemProps> = ({ type, isOpen, classNa
     <div
       className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
         isOpen
-          ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-2 ring-amber-400/40'
-          : 'bg-slate-900 text-amber-400 border-2 border-amber-500/40 hover:border-amber-400'
+          ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white font-bold shadow-xs ring-2 ring-amber-400/40'
+          : 'bg-amber-50 text-amber-700 border-2 border-amber-200 hover:border-amber-400'
       } ${className}`}
       title="Alloy Rim Size"
     >
@@ -350,7 +350,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   return (
     <div className="space-y-2.5 text-[11px]">
       {/* 1. Category Switcher Tabs: Tyres vs Alloy Rims */}
-      <div className="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 shadow-sm">
+      <div className="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300 shadow-2xs">
         <button
           onClick={() => {
             setActiveCategory('tyre');
@@ -358,8 +358,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           }}
           className={`flex-1 py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-98 ${
             activeCategory === 'tyre'
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'bg-orange-500 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
           }`}
         >
           <CircleDot className="w-3.5 h-3.5" />
@@ -373,8 +373,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           }}
           className={`flex-1 py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-98 ${
             activeCategory === 'rim'
-              ? 'bg-amber-500 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'bg-amber-500 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
           }`}
         >
           <Disc className="w-3.5 h-3.5" />
@@ -383,16 +383,16 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       </div>
 
       {/* 2. Customer Query: Rim Diameter Quick Selector Bar (13", 14", 15", 16", etc.) */}
-      <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-2 space-y-1.5">
+      <div className="bg-white border border-slate-200 rounded-xl p-2 space-y-1.5 shadow-2xs">
         <div className="flex items-center justify-between text-[10px]">
-          <span className="font-bold text-slate-300 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-orange-400" />
+          <span className="font-bold text-slate-700 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-orange-500" />
             <span>Select Rim Size / Inch to check customer query:</span>
           </span>
           {selectedDiameter !== 'all' && (
             <button
               onClick={() => setSelectedDiameter('all')}
-              className="text-orange-400 hover:text-orange-300 font-semibold underline underline-offset-2"
+              className="text-orange-600 hover:text-orange-700 font-semibold underline underline-offset-2"
             >
               Show All Sizes
             </button>
@@ -404,8 +404,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
             onClick={() => setSelectedDiameter('all')}
             className={`px-2.5 py-1 rounded-lg font-bold text-[10px] whitespace-nowrap transition border ${
               selectedDiameter === 'all'
-                ? 'bg-orange-500 text-white border-orange-400 shadow-sm'
-                : 'bg-slate-800/80 text-slate-400 border-slate-700/80 hover:text-white hover:bg-slate-800'
+                ? 'bg-orange-500 text-white border-orange-500 shadow-xs'
+                : 'bg-slate-100 text-slate-700 border-slate-200 hover:text-slate-900 hover:bg-slate-200'
             }`}
           >
             All Sizes
@@ -419,10 +419,10 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 onClick={() => setSelectedDiameter(isSelected ? 'all' : d.inch)}
                 className={`px-2.5 py-1 rounded-lg font-bold text-[10px] whitespace-nowrap transition border flex items-center gap-1 active:scale-95 ${
                   isSelected
-                    ? 'bg-orange-500 text-white border-orange-400 shadow-sm ring-1 ring-orange-400/40'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-xs ring-1 ring-orange-400/40'
                     : d.hasStock
-                    ? 'bg-slate-800/90 text-slate-200 border-slate-700 hover:border-orange-500/50 hover:text-white'
-                    : 'bg-slate-900 text-slate-500 border-slate-800/80 hover:text-slate-400'
+                    ? 'bg-slate-100 text-slate-800 border-slate-200 hover:border-orange-400 hover:text-orange-600'
+                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600'
                 }`}
               >
                 <span>{d.inch}&quot;</span>
@@ -430,14 +430,14 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                   <span
                     className={`text-[8px] px-1 py-0.2 rounded font-semibold ${
                       isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-emerald-500/20 text-emerald-300'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
                     {d.totalQty}
                   </span>
                 ) : (
-                  <span className="text-[8px] text-slate-600">0</span>
+                  <span className="text-[8px] text-slate-400">0</span>
                 )}
               </button>
             );
@@ -447,30 +447,30 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
       {/* 3. Customer Response Quick Banner (When an inch like 16" is clicked) */}
       {activeDiameterData && (
-        <div className="p-2.5 bg-gradient-to-r from-orange-500/15 via-slate-900 to-slate-900 border border-orange-500/40 rounded-xl flex items-start gap-2 shadow-sm animate-fadeIn">
-          <div className="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="p-2.5 bg-gradient-to-r from-orange-50 via-amber-50/50 to-white border border-orange-200 rounded-xl flex items-start gap-2 shadow-2xs animate-fadeIn">
+          <div className="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
             <PhoneCall className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-1 flex-wrap">
-              <h4 className="font-bold text-white text-[11px]">
+              <h4 className="font-bold text-slate-900 text-[11px]">
                 Customer Query Response for {activeDiameterData.inch} Inch {targetType === 'tyre' ? 'Tyres' : 'Alloy Rims'}:
               </h4>
-              <span className="text-[10px] font-bold text-orange-400 bg-orange-500/20 px-1.5 py-0.5 rounded border border-orange-500/30">
+              <span className="text-[10px] font-bold text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">
                 {activeDiameterData.totalQty} {unit} in stock
               </span>
             </div>
-            <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
+            <p className="text-[10px] text-slate-700 mt-1 leading-relaxed">
               {activeDiameterData.totalQty > 0 ? (
                 <>
-                  Available in <strong className="text-white">{activeDiameterData.sizes.length} sizes</strong>:{' '}
-                  <span className="text-orange-300 font-semibold">{activeDiameterData.sizes.join(', ')}</span>.
+                  Available in <strong className="text-slate-900">{activeDiameterData.sizes.length} sizes</strong>:{' '}
+                  <span className="text-orange-700 font-semibold">{activeDiameterData.sizes.join(', ')}</span>.
                   <br />
                   Brands available:{' '}
-                  <strong className="text-emerald-400">{activeDiameterData.brands.join(', ')}</strong>.
+                  <strong className="text-emerald-700 font-bold">{activeDiameterData.brands.join(', ')}</strong>.
                 </>
               ) : (
-                <span className="text-rose-400 font-semibold">
+                <span className="text-rose-600 font-semibold">
                   Currently 0 {unit} in stock for {activeDiameterData.inch} inch. You can reorder or add new stock below.
                 </span>
               )}
@@ -493,12 +493,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 ? 'Search size (16 inch, 205/55, 195/65), brand (Rotalla, General), rack...'
                 : 'Search rim size (16 inch, 17 inch), brand (Vossen, Spartx), PCD...'
             }
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-7 py-1.5 text-[11px] text-white placeholder:text-slate-500 focus:outline-none focus:border-orange-500 transition"
+            className="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-7 py-1.5 text-[11px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 shadow-2xs transition"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-white"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-700"
             >
               <X className="w-3 h-3" />
             </button>
@@ -508,13 +508,13 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         {/* View mode toggle and quick status filters */}
         <div className="flex items-center justify-between gap-1.5 flex-wrap text-[10px]">
           {/* View Mode Toggle: Sizes -> Brands vs Rim Inch Master vs Brands */}
-          <div className="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+          <div className="flex items-center bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
             <button
               onClick={() => setViewArrangement('size-first')}
               className={`px-2 py-0.5 rounded font-semibold transition ${
                 viewArrangement === 'size-first'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="See Sizes first, then Brands inside"
             >
@@ -524,8 +524,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               onClick={() => setViewArrangement('diameter-first')}
               className={`px-2 py-0.5 rounded font-semibold transition ${
                 viewArrangement === 'diameter-first'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Group by Rim Inch (e.g. 16 Inch Master)"
             >
@@ -535,8 +535,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               onClick={() => setViewArrangement('brand-first')}
               className={`px-2 py-0.5 rounded font-semibold transition ${
                 viewArrangement === 'brand-first'
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="See Brands first, then Sizes inside"
             >
@@ -553,8 +553,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               }}
               className={`px-2 py-0.5 rounded font-medium transition border ${
                 !showOnlyAlerts && stockFilter === 'all'
-                  ? 'bg-slate-800 text-white border-slate-700'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'bg-slate-800 text-white border-slate-800'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
               All
@@ -566,8 +566,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               }}
               className={`px-2 py-0.5 rounded font-medium transition border ${
                 !showOnlyAlerts && stockFilter === 'instock'
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
               In Stock
@@ -579,27 +579,27 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               }}
               className={`px-2 py-0.5 rounded font-medium transition border flex items-center gap-1 ${
                 showOnlyAlerts || stockFilter === 'low'
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
-              <AlertTriangle className="w-2.5 h-2.5" />
+              <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
               <span>Low</span>
             </button>
 
-            <div className="h-3 w-px bg-slate-800 mx-0.5" />
+            <div className="h-3 w-px bg-slate-300 mx-0.5" />
 
             <button
               onClick={handleExpandAll}
-              className="text-slate-400 hover:text-white underline underline-offset-2 flex items-center gap-0.5 text-[10px]"
+              className="text-slate-500 hover:text-slate-900 underline underline-offset-2 flex items-center gap-0.5 text-[10px]"
             >
               <Layers className="w-2.5 h-2.5" />
               <span>Expand</span>
             </button>
-            <span>•</span>
+            <span className="text-slate-300">•</span>
             <button
               onClick={handleCollapseAll}
-              className="text-slate-400 hover:text-white underline underline-offset-2 text-[10px]"
+              className="text-slate-500 hover:text-slate-900 underline underline-offset-2 text-[10px]"
             >
               Collapse
             </button>
@@ -608,12 +608,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       </div>
 
       {/* 5. Section Header */}
-      <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
-        <span className="font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+      <div className="flex items-center justify-between text-[10px] text-slate-500 px-0.5">
+        <span className="font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
           {targetType === 'tyre' ? (
-            <CircleDot className="w-3.5 h-3.5 text-orange-400" />
+            <CircleDot className="w-3.5 h-3.5 text-orange-500" />
           ) : (
-            <Disc className="w-3.5 h-3.5 text-amber-400" />
+            <Disc className="w-3.5 h-3.5 text-amber-500" />
           )}
           <span>
             {viewArrangement === 'size-first'
@@ -623,12 +623,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               : `Brands (${brandGroups.length} Brands)`}
           </span>
           {selectedDiameter !== 'all' && (
-            <span className="text-orange-400 font-bold ml-1">
+            <span className="text-orange-600 font-bold ml-1">
               • Filtered to {selectedDiameter}&quot;
             </span>
           )}
         </span>
-        <span>
+        <span className="font-medium text-slate-500">
           {filteredItems.reduce((s, it) => s + it.qty, 0)} {unit} total
         </span>
       </div>
@@ -638,10 +638,10 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       {/* MODE 1: SIZES -> BRANDS (Default requested) */}
       {viewArrangement === 'size-first' && (
         sizeGroups.length === 0 ? (
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 text-center space-y-1.5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-1.5 shadow-2xs">
             <AlertTriangle className="w-4 h-4 text-slate-400 mx-auto" />
-            <h3 className="text-xs font-bold text-white">No matching stock sizes</h3>
-            <p className="text-[10px] text-slate-400">
+            <h3 className="text-xs font-bold text-slate-900">No matching stock sizes</h3>
+            <p className="text-[10px] text-slate-500">
               No stock matches your active size search or diameter filter.
             </p>
             <button
@@ -651,7 +651,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 setShowOnlyAlerts(false);
                 setStockFilter('all');
               }}
-              className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 mt-1"
+              className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-800 border border-slate-300 mt-1 transition"
             >
               Reset Filters
             </button>
@@ -665,21 +665,21 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               return (
                 <div
                   key={group.size}
-                  className={`bg-slate-900/90 border rounded-xl overflow-hidden transition shadow-sm ${
+                  className={`bg-white border rounded-xl overflow-hidden transition shadow-2xs ${
                     isOpen
-                      ? 'border-orange-500/40 ring-1 ring-orange-500/20'
+                      ? 'border-orange-400 ring-1 ring-orange-400/30'
                       : group.outCount > 0
-                      ? 'border-rose-500/30'
+                      ? 'border-rose-300'
                       : group.lowCount > 0
-                      ? 'border-amber-500/30'
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? 'border-amber-300'
+                      : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {/* Size Item Header */}
                   <div
                     onClick={() => toggleFolder(folderKey)}
                     className={`px-3 py-2.5 flex items-center justify-between cursor-pointer select-none transition ${
-                      isOpen ? 'bg-slate-800/80 border-b border-slate-800' : 'hover:bg-slate-800/50'
+                      isOpen ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50/70'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -695,44 +695,44 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {/* Prominent Rim Inch Badge */}
                           {group.parsed.diameter > 0 && (
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-orange-50 text-orange-700 border border-orange-200">
                               {group.parsed.diameter}&quot; Rim
                             </span>
                           )}
 
-                          <h3 className="text-xs font-bold text-white tracking-wide">
+                          <h3 className="text-xs font-bold text-slate-900 tracking-wide">
                             {group.size}
                           </h3>
 
                           {/* Status alert pill */}
                           {group.outCount > 0 ? (
-                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200">
                               {group.outCount} Out
                             </span>
                           ) : group.lowCount > 0 ? (
-                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
                               {group.lowCount} Low
                             </span>
                           ) : null}
                         </div>
 
-                        <p className="text-[9px] text-slate-400 mt-0.5">
-                          <span className="text-emerald-400 font-semibold">
+                        <p className="text-[9px] text-slate-500 mt-0.5">
+                          <span className="text-emerald-700 font-semibold">
                             {group.brandsCount} {group.brandsCount === 1 ? 'brand' : 'brands'} available
                           </span>{' '}
                           ({group.brandNames.join(', ')}) •{' '}
-                          <strong className="text-white">{group.totalQty} {unit}</strong> in stock
+                          <strong className="text-slate-900">{group.totalQty} {unit}</strong> in stock
                         </p>
                       </div>
                     </div>
 
                     {/* Right side: Chevron */}
                     <div className="flex items-center gap-1 text-slate-400">
-                      <span className="text-[9px] font-medium hidden sm:inline">
+                      <span className="text-[9px] font-medium hidden sm:inline text-slate-500">
                         {isOpen ? 'Close' : 'View Brands'}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-orange-400" />
+                        <ChevronDown className="w-3.5 h-3.5 text-orange-600" />
                       ) : (
                         <ChevronRight className="w-3.5 h-3.5" />
                       )}
@@ -741,11 +741,11 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
                   {/* Folder Contents: Brands available in that Size */}
                   {isOpen && (
-                    <div className="p-2.5 bg-slate-950/60 space-y-2 animate-fadeIn">
+                    <div className="p-2.5 bg-slate-50/70 space-y-2 border-t border-slate-200 animate-fadeIn">
                       {/* Sub-header inside folder */}
-                      <div className="flex items-center justify-between px-1 text-[10px] text-slate-400 border-b border-slate-800/80 pb-1.5">
-                        <span className="font-semibold text-slate-300">
-                          Brands in <span className="text-orange-400">{group.size}</span>:
+                      <div className="flex items-center justify-between px-1 text-[10px] text-slate-600 border-b border-slate-200 pb-1.5">
+                        <span className="font-semibold text-slate-700">
+                          Brands in <span className="text-orange-600">{group.size}</span>:
                         </span>
                         <button
                           type="button"
@@ -753,7 +753,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                             e.stopPropagation();
                             onOpenAddModal(targetType, undefined, group.size);
                           }}
-                          className="text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-0.5"
+                          className="text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-0.5"
                         >
                           <Plus className="w-2.5 h-2.5" />
                           <span>+ Add Brand in this Size</span>
@@ -769,12 +769,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                           return (
                             <div
                               key={item.id}
-                              className={`bg-slate-900 border rounded-lg p-2.5 transition flex flex-col justify-between ${
+                              className={`bg-white border rounded-lg p-2.5 transition flex flex-col justify-between shadow-2xs ${
                                 isZero
-                                  ? 'border-rose-500/40 bg-rose-950/10'
+                                  ? 'border-rose-300 bg-rose-50/20'
                                   : isLow
-                                  ? 'border-amber-500/40 bg-amber-950/10'
-                                  : 'border-slate-800/90 hover:border-slate-700'
+                                  ? 'border-amber-300 bg-amber-50/20'
+                                  : 'border-slate-200 hover:border-slate-300'
                               }`}
                             >
                               {/* Top row: Brand Name, Model, Badges & Actions */}
@@ -782,31 +782,31 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                 <div className="flex items-start justify-between gap-1.5">
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="text-[12px] font-extrabold text-white tracking-wide">
+                                      <span className="text-[12px] font-extrabold text-slate-900 tracking-wide">
                                         {item.brand}
                                       </span>
                                       <span
                                         className={`text-[8px] font-bold px-1 py-0.2 rounded uppercase ${
                                           item.condition === 'New'
-                                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                            : 'bg-purple-50 text-purple-700 border border-purple-200'
                                         }`}
                                       >
                                         {item.condition}
                                       </span>
                                       {isZero ? (
-                                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500 text-white">
+                                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-600 text-white">
                                           0 ZERO
                                         </span>
                                       ) : isLow ? (
-                                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">
                                           LOW (≤{item.minQty})
                                         </span>
                                       ) : null}
                                     </div>
 
                                     {item.model && (
-                                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
                                         {item.model}
                                       </p>
                                     )}
@@ -817,7 +817,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => onOpenEditModal(item)}
-                                      className="p-1 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+                                      className="p-1 rounded bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 transition"
                                       title="Edit item"
                                     >
                                       <Edit2 className="w-3 h-3" />
@@ -825,30 +825,30 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => onRequestDelete(item)}
-                                      className="p-1 rounded bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition"
+                                      className="p-1 rounded bg-slate-100 text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition"
                                       title="Delete item"
                                     >
-                                      <Trash2 className="w-3 h-3 text-rose-400" />
+                                      <Trash2 className="w-3 h-3 text-rose-500" />
                                     </button>
                                   </div>
                                 </div>
 
                                 {/* Location, PCD or Tyre details */}
-                                <div className="mt-1.5 flex items-center justify-between gap-1 text-[9px] text-slate-400">
+                                <div className="mt-1.5 flex items-center justify-between gap-1 text-[9px] text-slate-600">
                                   {item.pcd ? (
                                     <span>
-                                      PCD: <strong className="text-slate-200">{item.pcd}</strong>
+                                      PCD: <strong className="text-slate-900">{item.pcd}</strong>
                                       {item.finish ? ` • ${item.finish}` : ''}
                                     </span>
                                   ) : item.loadIndex ? (
-                                    <span>Index: <strong className="text-slate-300">{item.loadIndex}</strong></span>
+                                    <span>Index: <strong className="text-slate-900">{item.loadIndex}</strong></span>
                                   ) : (
-                                    <span>Size: <strong className="text-orange-400">{item.size}</strong></span>
+                                    <span>Size: <strong className="text-orange-600 font-semibold">{item.size}</strong></span>
                                   )}
 
                                   {item.rack && (
-                                    <span className="flex items-center gap-0.5 text-slate-400">
-                                      <MapPin className="w-2 h-2 text-slate-500" />
+                                    <span className="flex items-center gap-0.5 text-slate-500">
+                                      <MapPin className="w-2 h-2 text-slate-400" />
                                       {item.rack}
                                     </span>
                                   )}
@@ -856,7 +856,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                               </div>
 
                               {/* Bottom row: Stepper, Quantity & Adjust */}
-                              <div className="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between gap-1.5">
+                              <div className="mt-2 pt-1.5 border-t border-slate-200 flex items-center justify-between gap-1.5">
                                 <div className="flex items-center gap-1">
                                   <button
                                     type="button"
@@ -864,8 +864,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                     disabled={item.qty <= 0}
                                     className={`w-7 h-7 rounded font-bold text-xs flex items-center justify-center transition active:scale-90 ${
                                       item.qty <= 0
-                                        ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
-                                        : 'bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700'
+                                        ? 'bg-slate-100 text-slate-300 cursor-not-allowed border border-slate-200'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-rose-600 border border-slate-200 shadow-2xs'
                                     }`}
                                     title="Decrease (-1)"
                                   >
@@ -876,15 +876,15 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                     <span
                                       className={`text-sm font-bold leading-none block ${
                                         item.qty === 0
-                                          ? 'text-rose-400'
+                                          ? 'text-rose-600'
                                           : item.qty <= item.minQty
-                                          ? 'text-amber-400'
-                                          : 'text-emerald-400'
+                                          ? 'text-amber-600'
+                                          : 'text-emerald-700'
                                       }`}
                                     >
                                       {item.qty}
                                     </span>
-                                    <span className="text-[8px] uppercase text-slate-500 block leading-tight">
+                                    <span className="text-[8px] uppercase text-slate-400 font-medium block leading-tight">
                                       {unit}
                                     </span>
                                   </div>
@@ -892,7 +892,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => onQuickQuantityChange(item.id, 1)}
-                                    className="w-7 h-7 rounded font-bold text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 flex items-center justify-center transition active:scale-90"
+                                    className="w-7 h-7 rounded font-bold text-xs bg-slate-100 hover:bg-slate-200 text-emerald-700 border border-slate-200 shadow-2xs flex items-center justify-center transition active:scale-90"
                                     title="Increase (+1)"
                                   >
                                     <Plus className="w-3 h-3" />
@@ -902,9 +902,9 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onOpenAdjustModal(item)}
-                                  className="flex-1 py-1 px-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-semibold text-slate-200 border border-slate-700 flex items-center justify-center gap-1 active:scale-95 transition"
+                                  className="flex-1 py-1 px-1.5 rounded bg-slate-100 hover:bg-slate-200 text-[10px] font-semibold text-slate-700 border border-slate-200 flex items-center justify-center gap-1 active:scale-95 transition shadow-2xs"
                                 >
-                                  <SlidersHorizontal className="w-2.5 h-2.5 text-orange-400" />
+                                  <SlidersHorizontal className="w-2.5 h-2.5 text-orange-600" />
                                   <span>Adjust</span>
                                 </button>
                               </div>
@@ -917,7 +917,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                       <button
                         type="button"
                         onClick={() => onOpenAddModal(targetType, undefined, group.size)}
-                        className="w-full py-1.5 px-2 rounded-lg border border-dashed border-slate-800 hover:border-orange-500/50 bg-slate-900/40 hover:bg-slate-800/60 text-slate-400 hover:text-orange-400 text-[10px] font-semibold flex items-center justify-center gap-1 transition"
+                        className="w-full py-1.5 px-2 rounded-lg border border-dashed border-slate-300 hover:border-orange-400 bg-white hover:bg-orange-50/40 text-slate-600 hover:text-orange-600 text-[10px] font-semibold flex items-center justify-center gap-1 transition"
                       >
                         <Plus className="w-3 h-3" />
                         <span>+ Add another Brand to {group.size}</span>
@@ -934,10 +934,10 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       {/* MODE 2: RIM INCH MASTER (e.g. 16 Inch Master -> Profile Sizes -> Brands) */}
       {viewArrangement === 'diameter-first' && (
         diameterGroups.length === 0 ? (
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 text-center space-y-1.5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-1.5 shadow-2xs">
             <AlertTriangle className="w-4 h-4 text-slate-400 mx-auto" />
-            <h3 className="text-xs font-bold text-white">No matching diameters</h3>
-            <p className="text-[10px] text-slate-400">Try changing your search or filters.</p>
+            <h3 className="text-xs font-bold text-slate-900">No matching diameters</h3>
+            <p className="text-[10px] text-slate-500">Try changing your search or filters.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -948,17 +948,17 @@ export const InventoryList: React.FC<InventoryListProps> = ({
               return (
                 <div
                   key={dia.diameter}
-                  className={`bg-slate-900/90 border rounded-xl overflow-hidden transition shadow-sm ${
+                  className={`bg-white border rounded-xl overflow-hidden transition shadow-2xs ${
                     isOpen
-                      ? 'border-orange-500/40 ring-1 ring-orange-500/20'
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? 'border-orange-400 ring-1 ring-orange-400/30'
+                      : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {/* Master Header */}
                   <div
                     onClick={() => toggleFolder(folderKey)}
                     className={`px-3 py-2.5 flex items-center justify-between cursor-pointer select-none transition ${
-                      isOpen ? 'bg-slate-800/80 border-b border-slate-800' : 'hover:bg-slate-800/50'
+                      isOpen ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50/70'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -970,45 +970,45 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <h3 className="text-xs font-bold text-white">
+                          <h3 className="text-xs font-bold text-slate-900">
                             {dia.label}
                           </h3>
                           {dia.outCount > 0 ? (
-                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200">
                               {dia.outCount} Out
                             </span>
                           ) : dia.lowCount > 0 ? (
-                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
                               {dia.lowCount} Low
                             </span>
                           ) : null}
                         </div>
-                        <p className="text-[9px] text-slate-400 mt-0.5">
-                          <span className="text-orange-400 font-semibold">{dia.sizesCount} sizes</span> •{' '}
-                          <span className="text-emerald-400 font-semibold">{dia.brandsCount} brands</span> ({dia.brands.join(', ')}) •{' '}
-                          <strong className="text-white">{dia.totalQty} {unit}</strong>
+                        <p className="text-[9px] text-slate-500 mt-0.5">
+                          <span className="text-orange-600 font-semibold">{dia.sizesCount} sizes</span> •{' '}
+                          <span className="text-emerald-700 font-semibold">{dia.brandsCount} brands</span> ({dia.brands.join(', ')}) •{' '}
+                          <strong className="text-slate-900">{dia.totalQty} {unit}</strong>
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1 text-slate-400">
-                      {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-orange-400" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-orange-600" /> : <ChevronRight className="w-3.5 h-3.5" />}
                     </div>
                   </div>
 
                   {/* Inside Rim Diameter Folder: Sub-sizes with Brands inside */}
                   {isOpen && (
-                    <div className="p-2.5 bg-slate-950/60 space-y-3 animate-fadeIn">
+                    <div className="p-2.5 bg-slate-50/70 space-y-3 border-t border-slate-200 animate-fadeIn">
                       {dia.subSizes.map((sub) => (
-                        <div key={sub.size} className="space-y-1.5 border-l-2 border-orange-500/40 pl-2">
+                        <div key={sub.size} className="space-y-1.5 border-l-2 border-orange-500 pl-2">
                           <div className="flex items-center justify-between text-[10px]">
-                            <span className="font-bold text-orange-400">
+                            <span className="font-bold text-orange-700">
                               Size: {sub.size} ({sub.totalQty} {unit} across {sub.brands.length} brands)
                             </span>
                             <button
                               type="button"
                               onClick={() => onOpenAddModal(targetType, undefined, sub.size)}
-                              className="text-[9px] text-orange-400 hover:underline font-semibold"
+                              className="text-[9px] text-orange-600 hover:text-orange-700 hover:underline font-semibold"
                             >
                               + Add Brand
                             </button>
@@ -1018,38 +1018,38 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                             {sub.items.map((item) => (
                               <div
                                 key={item.id}
-                                className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex items-center justify-between gap-2"
+                                className="bg-white border border-slate-200 rounded-lg p-2 flex items-center justify-between gap-2 shadow-2xs"
                               >
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1">
-                                    <span className="font-bold text-white text-[11px]">{item.brand}</span>
-                                    <span className="text-[8px] px-1 py-0.2 rounded bg-slate-800 text-slate-300">
+                                    <span className="font-bold text-slate-900 text-[11px]">{item.brand}</span>
+                                    <span className="text-[8px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200">
                                       {item.condition}
                                     </span>
                                   </div>
-                                  <p className="text-[9px] text-slate-400 truncate">{item.model || item.rack}</p>
+                                  <p className="text-[9px] text-slate-500 truncate">{item.model || item.rack}</p>
                                 </div>
 
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
                                   <button
                                     onClick={() => onQuickQuantityChange(item.id, -1)}
                                     disabled={item.qty <= 0}
-                                    className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center font-bold text-xs"
+                                    className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-rose-600 border border-slate-200 flex items-center justify-center font-bold text-xs"
                                   >
                                     <Minus className="w-2.5 h-2.5" />
                                   </button>
-                                  <span className="font-bold text-xs text-white min-w-[20px] text-center">
+                                  <span className="font-bold text-xs text-slate-900 min-w-[20px] text-center">
                                     {item.qty}
                                   </span>
                                   <button
                                     onClick={() => onQuickQuantityChange(item.id, 1)}
-                                    className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center font-bold text-xs"
+                                    className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-emerald-700 border border-slate-200 flex items-center justify-center font-bold text-xs"
                                   >
                                     <Plus className="w-2.5 h-2.5" />
                                   </button>
                                   <button
                                     onClick={() => onOpenAdjustModal(item)}
-                                    className="px-1.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9px] font-semibold"
+                                    className="px-1.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-[9px] font-semibold"
                                   >
                                     Adjust
                                   </button>
@@ -1078,46 +1078,46 @@ export const InventoryList: React.FC<InventoryListProps> = ({
             return (
               <div
                 key={group.brand}
-                className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden"
+                className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs"
               >
                 <div
                   onClick={() => toggleFolder(folderKey)}
-                  className="px-3 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50"
+                  className="px-3 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50/70"
                 >
                   <div className="flex items-center gap-2">
                     <StockItemEmblem type={targetType} isOpen={isOpen} />
                     <div>
-                      <h3 className="text-xs font-bold text-white">{group.brand}</h3>
-                      <p className="text-[9px] text-slate-400">
+                      <h3 className="text-xs font-bold text-slate-900">{group.brand}</h3>
+                      <p className="text-[9px] text-slate-500">
                         {group.sizesCount} sizes • {group.totalQty} {unit}
                       </p>
                     </div>
                   </div>
-                  {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-orange-600" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
                 </div>
 
                 {isOpen && (
-                  <div className="p-2.5 bg-slate-950/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div className="p-2.5 bg-slate-50/70 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {group.items.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex items-center justify-between"
+                        className="bg-white border border-slate-200 rounded-lg p-2 flex items-center justify-between shadow-2xs"
                       >
                         <div>
-                          <span className="font-bold text-orange-400 text-xs">{item.size}</span>
-                          <p className="text-[9px] text-slate-400">{item.model}</p>
+                          <span className="font-bold text-orange-600 text-xs">{item.size}</span>
+                          <p className="text-[9px] text-slate-500">{item.model}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => onQuickQuantityChange(item.id, -1)}
-                            className="w-6 h-6 rounded bg-slate-800 text-rose-400 flex items-center justify-center font-bold"
+                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-rose-600 flex items-center justify-center font-bold"
                           >
                             -
                           </button>
-                          <span className="font-bold text-xs text-white min-w-[20px] text-center">{item.qty}</span>
+                          <span className="font-bold text-xs text-slate-900 min-w-[20px] text-center">{item.qty}</span>
                           <button
                             onClick={() => onQuickQuantityChange(item.id, 1)}
-                            className="w-6 h-6 rounded bg-slate-800 text-emerald-400 flex items-center justify-center font-bold"
+                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-emerald-700 flex items-center justify-center font-bold"
                           >
                             +
                           </button>

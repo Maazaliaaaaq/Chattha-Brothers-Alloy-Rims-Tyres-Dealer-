@@ -173,24 +173,24 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
       <div
-        className="bg-slate-900 border border-slate-800 rounded-t-xl sm:rounded-xl w-full max-w-sm shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[92vh]"
+        className="bg-white border border-slate-200 rounded-t-xl sm:rounded-xl w-full max-w-sm shadow-xl overflow-hidden text-slate-900 flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
-            <h3 className="text-xs font-bold text-white">
+            <h3 className="text-xs font-bold text-slate-900">
               {editingItem ? 'Edit Stock Item' : 'Add New Stock'}
             </h3>
-            <p className="text-[9px] text-slate-400">
+            <p className="text-[9px] text-slate-500">
               Chattha Brothers Tyres &amp; Rims Dealer
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded flex items-center justify-center bg-slate-800 text-slate-400 hover:text-white"
+            className="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -199,15 +199,15 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto space-y-2.5">
           {errorMsg && (
-            <div className="p-2 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[11px] flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-400" />
+            <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-600" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* Item Type Switcher */}
           <div>
-            <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
               Category
             </label>
             <div className="grid grid-cols-2 gap-1">
@@ -216,8 +216,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 onClick={() => handleTypeChange('tyre')}
                 className={`py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1 transition border ${
                   type === 'tyre'
-                    ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-xs'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:text-slate-900 hover:bg-slate-200'
                 }`}
               >
                 <CircleDot className="w-3 h-3" />
@@ -229,8 +229,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 onClick={() => handleTypeChange('rim')}
                 className={`py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1 transition border ${
                   type === 'rim'
-                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:text-slate-900 hover:bg-slate-200'
                 }`}
               >
                 <Disc className="w-3 h-3" />
@@ -241,7 +241,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
           {/* Brand Selection */}
           <div>
-            <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
               Brand
             </label>
             <div className="flex flex-wrap gap-1 mb-1">
@@ -256,8 +256,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   }}
                   className={`px-2 py-0.5 rounded text-[10px] font-medium transition border ${
                     brand === b
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
+                      ? 'bg-orange-500 text-white border-orange-500 shadow-2xs'
+                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
                   }`}
                 >
                   {b}
@@ -268,8 +268,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 onClick={() => setBrand('Other')}
                 className={`px-2 py-0.5 rounded text-[10px] font-medium transition border ${
                   brand === 'Other'
-                    ? 'bg-orange-500 text-white border-orange-500'
-                    : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-2xs'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
                 + Other
@@ -285,7 +285,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   setCustomBrand(e.target.value);
                   setErrorMsg('');
                 }}
-                className="w-full bg-slate-950 border border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none"
+                className="w-full bg-white border border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-900 focus:outline-none shadow-2xs"
                 autoFocus
               />
             )}
@@ -293,7 +293,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
           {/* Model / Pattern (Optional) */}
           <div>
-            <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
               Pattern / Model / Design
             </label>
             <input
@@ -301,14 +301,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({
               placeholder={type === 'tyre' ? 'e.g. Setula S-Pace, BluEarth' : 'e.g. CV3, 5-Spoke concave'}
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none"
+              className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-900 focus:outline-none shadow-2xs"
             />
           </div>
 
           {/* Size & Condition */}
           <div className="grid grid-cols-2 gap-1.5">
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Size
               </label>
               <select
@@ -317,7 +317,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   setSize(e.target.value);
                   setErrorMsg('');
                 }}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-white focus:outline-none"
+                className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-slate-900 focus:outline-none shadow-2xs"
               >
                 {currentSizes.map((s) => (
                   <option key={s} value={s}>
@@ -336,13 +336,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                     setCustomSize(e.target.value);
                     setErrorMsg('');
                   }}
-                  className="mt-1 w-full bg-slate-950 border border-orange-500 rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none"
+                  className="mt-1 w-full bg-white border border-orange-500 rounded-lg px-2 py-1 text-[11px] text-slate-900 focus:outline-none shadow-2xs"
                 />
               )}
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Condition
               </label>
               <div className="grid grid-cols-2 gap-1">
@@ -351,8 +351,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   onClick={() => setCondition('New')}
                   className={`py-1.5 rounded-lg text-[11px] font-bold border transition ${
                     condition === 'New'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:text-slate-900'
                   }`}
                 >
                   New
@@ -362,8 +362,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   onClick={() => setCondition('Used')}
                   className={`py-1.5 rounded-lg text-[11px] font-bold border transition ${
                     condition === 'Used'
-                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/60'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      ? 'bg-purple-100 text-purple-800 border-purple-300'
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:text-slate-900'
                   }`}
                 >
                   Used
@@ -375,7 +375,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           {/* PCD (for Rims only) */}
           {type === 'rim' && (
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Bolt Pattern (PCD)
               </label>
               <input
@@ -383,7 +383,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 placeholder="e.g. 5x114.3, 4x100, 5x112"
                 value={pcd}
                 onChange={(e) => setPcd(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none"
+                className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-900 focus:outline-none shadow-2xs"
               />
             </div>
           )}
@@ -391,7 +391,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           {/* Quantities & Location */}
           <div className="grid grid-cols-3 gap-1.5">
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Stock Qty
               </label>
               <input
@@ -399,12 +399,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 min="0"
                 value={qty}
                 onChange={(e) => setQty(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center font-bold text-white focus:outline-none"
+                className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center font-bold text-slate-900 focus:outline-none shadow-2xs"
               />
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Min Alert
               </label>
               <input
@@ -412,12 +412,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 min="0"
                 value={minQty}
                 onChange={(e) => setMinQty(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center font-bold text-white focus:outline-none"
+                className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center font-bold text-slate-900 focus:outline-none shadow-2xs"
               />
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[9px] font-bold uppercase text-slate-500 mb-1">
                 Rack
               </label>
               <input
@@ -425,26 +425,26 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 placeholder="Rack T-1"
                 value={rack}
                 onChange={(e) => setRack(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center text-white focus:outline-none"
+                className="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-lg px-2 py-1.5 text-[11px] text-center text-slate-900 focus:outline-none shadow-2xs"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-1.5 flex items-center gap-1.5 border-t border-slate-800">
+          <div className="pt-1.5 flex items-center gap-1.5 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px]"
+              className="flex-1 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-medium text-[11px] transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-sm active:scale-95 transition"
+              className="flex-1 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-xs active:scale-95 transition"
             >
               <Check className="w-3 h-3" />
-              <span>{editingItem ? 'Save' : 'Add'}</span>
+              <span>{editingItem ? 'Save Changes' : 'Add Stock'}</span>
             </button>
           </div>
         </form>

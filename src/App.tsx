@@ -184,7 +184,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-14 sm:pb-6 text-[11px]">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-14 sm:pb-6 text-[11px]">
       {/* Top Header */}
       <Header
         items={items}
@@ -231,12 +231,12 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-2.5 text-center text-slate-500 px-3">
+      <footer className="border-t border-slate-200 bg-white py-2.5 text-center text-slate-500 px-3 shadow-2xs">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px]">
-          <div className="font-semibold text-slate-400">
+          <div className="font-semibold text-slate-700">
             Chattha Brothers Alloy Rims &amp; Tyres Dealer
           </div>
-          <div>Size &amp; Brand Stock Directory</div>
+          <div className="text-slate-500">Size &amp; Brand Stock Directory</div>
         </div>
       </footer>
 
