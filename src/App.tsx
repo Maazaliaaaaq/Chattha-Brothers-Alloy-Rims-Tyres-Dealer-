@@ -27,6 +27,7 @@ export default function App() {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [initialItemType, setInitialItemType] = useState<ItemType>('tyre');
   const [initialItemBrand, setInitialItemBrand] = useState<string | undefined>(undefined);
+  const [initialItemSize, setInitialItemSize] = useState<string | undefined>(undefined);
 
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
@@ -196,11 +197,12 @@ export default function App() {
           setEditingItem(null);
           setInitialItemType(t || 'tyre');
           setInitialItemBrand(undefined);
+          setInitialItemSize(undefined);
           setIsItemModalOpen(true);
         }}
       />
 
-      {/* Main Stock Content Area with Brand Folders */}
+      {/* Main Stock Content Area with Size Folders */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-2.5 sm:px-4 py-2.5 sm:py-3">
         <InventoryList
           items={items}
@@ -208,10 +210,11 @@ export default function App() {
           setActiveCategory={setActiveCategory}
           showOnlyAlerts={showOnlyAlerts}
           setShowOnlyAlerts={setShowOnlyAlerts}
-          onOpenAddModal={(t, brand) => {
+          onOpenAddModal={(t, brand, size) => {
             setEditingItem(null);
             setInitialItemType(t);
             setInitialItemBrand(brand);
+            setInitialItemSize(size);
             setIsItemModalOpen(true);
           }}
           onOpenEditModal={(item) => {
@@ -233,7 +236,7 @@ export default function App() {
           <div className="font-semibold text-slate-400">
             Chattha Brothers Alloy Rims &amp; Tyres Dealer
           </div>
-          <div>Brand Folder Stock Directory</div>
+          <div>Size &amp; Brand Stock Directory</div>
         </div>
       </footer>
 
@@ -245,11 +248,13 @@ export default function App() {
             setIsItemModalOpen(false);
             setEditingItem(null);
             setInitialItemBrand(undefined);
+            setInitialItemSize(undefined);
           }}
           onSave={handleSaveItem}
           editingItem={editingItem}
           initialType={initialItemType}
           initialBrand={initialItemBrand}
+          initialSize={initialItemSize}
         />
       )}
 

@@ -393,6 +393,23 @@ export const INITIAL_ITEMS: InventoryItem[] = [
     notes: 'Toyota GLi / Altis OEM',
     updatedAt: Date.now() - 3600000 * 19,
   },
+  {
+    id: 'tyre-general-4',
+    type: 'tyre',
+    brand: 'General',
+    model: 'Euro Star Sport',
+    size: '205/55 R16',
+    condition: 'New',
+    tyreType: 'Tubeless',
+    loadIndex: '91V',
+    buyPrice: 18500,
+    sellPrice: 22000,
+    qty: 12,
+    minQty: 4,
+    rack: 'Rack T-9',
+    notes: 'Honda Civic & Grande 16 inch fitment',
+    updatedAt: Date.now() - 3600000 * 8,
+  },
 
   // Alloy Rims - Vossen China New
   {

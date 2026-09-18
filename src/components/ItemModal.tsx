@@ -15,6 +15,7 @@ interface ItemModalProps {
   editingItem?: InventoryItem | null;
   initialType?: ItemType;
   initialBrand?: string;
+  initialSize?: string;
 }
 
 export const ItemModal: React.FC<ItemModalProps> = ({
@@ -24,6 +25,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   editingItem,
   initialType = 'tyre',
   initialBrand,
+  initialSize,
 }) => {
   const [type, setType] = useState<ItemType>(editingItem?.type || initialType);
   const [brand, setBrand] = useState<string>(
@@ -31,7 +33,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   );
   const [customBrand, setCustomBrand] = useState<string>('');
   const [model, setModel] = useState<string>(editingItem?.model || '');
-  const [size, setSize] = useState<string>(editingItem?.size || POPULAR_TYRE_SIZES[0]);
+  const [size, setSize] = useState<string>(
+    editingItem?.size || initialSize || POPULAR_TYRE_SIZES[0]
+  );
   const [customSize, setCustomSize] = useState<string>('');
   const [condition, setCondition] = useState<'New' | 'Used'>(
     editingItem?.condition || 'New'
@@ -86,15 +90,29 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       setBrand(defaultB);
       setCustomBrand('');
       setModel('');
-      setSize(activeType === 'tyre' ? POPULAR_TYRE_SIZES[9] : POPULAR_RIM_SIZES[2]);
-      setCustomSize('');
+
+      const defaultTargetSize =
+        initialSize || (activeType === 'tyre' ? POPULAR_TYRE_SIZES[9] : POPULAR_RIM_SIZES[2]);
+      const isKnownSize =
+        activeType === 'tyre'
+          ? POPULAR_TYRE_SIZES.includes(defaultTargetSize)
+          : POPULAR_RIM_SIZES.includes(defaultTargetSize);
+
+      if (isKnownSize) {
+        setSize(defaultTargetSize);
+        setCustomSize('');
+      } else {
+        setSize('Other');
+        setCustomSize(defaultTargetSize);
+      }
+
       setCondition('New');
       setPcd('');
       setQty(activeType === 'tyre' ? 8 : 4);
       setMinQty(activeType === 'tyre' ? 4 : 2);
       setRack(activeType === 'tyre' ? 'Rack T-1' : 'Shelf R-1');
     }
-  }, [editingItem, initialType, initialBrand, isOpen]);
+  }, [editingItem, initialType, initialBrand, initialSize, isOpen]);
 
   if (!isOpen) return null;
 
