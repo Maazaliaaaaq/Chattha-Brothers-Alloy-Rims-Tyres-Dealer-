@@ -202,7 +202,7 @@ export default function App() {
         }}
       />
 
-      {/* Main Stock Content Area with Size Folders */}
+      {/* Main Stock Content Area with Size Catalog */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-2.5 sm:px-4 py-2.5 sm:py-3">
         <InventoryList
           items={items}
@@ -274,8 +274,8 @@ export default function App() {
       {/* Delete Item Confirmation Modal (In-App dialog, works 100% in iframe) */}
       <ConfirmModal
         isOpen={Boolean(itemToDelete)}
-        title="Delete Stock Size"
-        message="Remove this size from the brand folder?"
+        title="Delete Stock Item"
+        message="Remove this item from the stock directory?"
         itemName={itemToDelete ? `${itemToDelete.brand} - ${itemToDelete.size}` : undefined}
         itemDetail={
           itemToDelete

@@ -14,8 +14,6 @@ import {
   AlertTriangle,
   X,
   MapPin,
-  Folder,
-  FolderOpen,
   ChevronDown,
   ChevronRight,
   Layers,
@@ -23,6 +21,43 @@ import {
   PhoneCall,
   ArrowUpDown,
 } from 'lucide-react';
+
+interface StockItemEmblemProps {
+  type: ItemType;
+  isOpen?: boolean;
+  diameter?: number;
+  className?: string;
+}
+
+const StockItemEmblem: React.FC<StockItemEmblemProps> = ({ type, isOpen, className = '' }) => {
+  if (type === 'tyre') {
+    return (
+      <div
+        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+          isOpen
+            ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-400/40'
+            : 'bg-slate-900 text-orange-400 border-2 border-slate-700/90 hover:border-orange-500/60'
+        } ${className}`}
+        title="Tyre Size"
+      >
+        <CircleDot className="w-4 h-4" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+        isOpen
+          ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-2 ring-amber-400/40'
+          : 'bg-slate-900 text-amber-400 border-2 border-amber-500/40 hover:border-amber-400'
+      } ${className}`}
+      title="Alloy Rim Size"
+    >
+      <Disc className="w-4 h-4" />
+    </div>
+  );
+};
 
 interface InventoryListProps {
   items: InventoryItem[];
@@ -574,12 +609,19 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
       {/* 5. Section Header */}
       <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
-        <span className="font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1">
-          📁 {viewArrangement === 'size-first'
-            ? `Stock Sizes (${sizeGroups.length} Folders)`
-            : viewArrangement === 'diameter-first'
-            ? `Rim Diameters (${diameterGroups.length} Groups)`
-            : `Brands (${brandGroups.length} Folders)`}
+        <span className="font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          {targetType === 'tyre' ? (
+            <CircleDot className="w-3.5 h-3.5 text-orange-400" />
+          ) : (
+            <Disc className="w-3.5 h-3.5 text-amber-400" />
+          )}
+          <span>
+            {viewArrangement === 'size-first'
+              ? `${targetType === 'tyre' ? 'Tyre Sizes' : 'Alloy Rim Sizes'} (${sizeGroups.length} Sizes)`
+              : viewArrangement === 'diameter-first'
+              ? `Rim Diameters (${diameterGroups.length} Groups)`
+              : `Brands (${brandGroups.length} Brands)`}
+          </span>
           {selectedDiameter !== 'all' && (
             <span className="text-orange-400 font-bold ml-1">
               • Filtered to {selectedDiameter}&quot;
@@ -591,7 +633,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         </span>
       </div>
 
-      {/* 6. Main Folders List */}
+      {/* 6. Main Stock Sizes List */}
 
       {/* MODE 1: SIZES -> BRANDS (Default requested) */}
       {viewArrangement === 'size-first' && (
@@ -633,7 +675,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                       : 'border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  {/* Size Folder Header */}
+                  {/* Size Item Header */}
                   <div
                     onClick={() => toggleFolder(folderKey)}
                     className={`px-3 py-2.5 flex items-center justify-between cursor-pointer select-none transition ${
@@ -641,16 +683,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      {/* Folder Icon */}
-                      <div
-                        className={`p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isOpen
-                            ? 'bg-orange-500 text-white shadow-sm'
-                            : 'bg-slate-800 text-orange-400 border border-slate-700'
-                        }`}
-                      >
-                        {isOpen ? <FolderOpen className="w-3.5 h-3.5" /> : <Folder className="w-3.5 h-3.5" />}
-                      </div>
+                      {/* Tyre / Rim Emblem */}
+                      <StockItemEmblem
+                        type={targetType}
+                        isOpen={isOpen}
+                        diameter={group.parsed.diameter}
+                      />
 
                       {/* Size Title & Brands available */}
                       <div className="min-w-0">
@@ -924,13 +962,11 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className={`p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 font-extrabold text-[11px] ${
-                          isOpen ? 'bg-orange-500 text-white' : 'bg-slate-800 text-orange-400 border border-slate-700'
-                        }`}
-                      >
-                        {dia.diameter}&quot;
-                      </div>
+                      <StockItemEmblem
+                        type={targetType}
+                        isOpen={isOpen}
+                        diameter={dia.diameter}
+                      />
 
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -1049,7 +1085,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                   className="px-3 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50"
                 >
                   <div className="flex items-center gap-2">
-                    <Folder className="w-3.5 h-3.5 text-orange-400" />
+                    <StockItemEmblem type={targetType} isOpen={isOpen} />
                     <div>
                       <h3 className="text-xs font-bold text-white">{group.brand}</h3>
                       <p className="text-[9px] text-slate-400">
