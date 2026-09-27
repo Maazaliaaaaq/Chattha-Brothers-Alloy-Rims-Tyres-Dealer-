@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
 import rawConfig from '../../firebase-applet-config.json';
 
@@ -40,9 +40,14 @@ try {
 
     auth = getAuth(app);
 
-    signInAnonymously(auth).catch((err) => {
-      console.debug('Firebase auth initialization note:', err?.message);
-    });
+    // Test connection as instructed in Firebase guidelines
+    if (db) {
+      getDocFromServer(doc(db, 'test', 'connection')).catch((error) => {
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.error('Please check your Firebase configuration.');
+        }
+      });
+    }
   } else {
     console.warn('Firebase configuration missing required keys, falling back to local mode.');
   }

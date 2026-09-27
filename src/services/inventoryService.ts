@@ -2,21 +2,85 @@ import {
   collection,
   doc,
   setDoc,
-  updateDoc,
   deleteDoc,
   onSnapshot,
   writeBatch,
-  getDocs,
   query,
   orderBy,
   limit,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { InventoryItem, StockAdjustment, ShopSettings, AdjustmentReason } from '../types';
 import { INITIAL_ITEMS, DEFAULT_SETTINGS } from '../data/defaultStock';
 import { loadInventory, saveInventory } from '../utils/storage';
 
 export type SyncStatus = 'connecting' | 'connected' | 'error' | 'offline';
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo:
+        auth?.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+  console.error('Firestore Error:', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+/**
+ * Strips any undefined fields recursively so Firestore never throws
+ * "Unsupported field value: undefined" errors.
+ */
+export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        result[key] = sanitizeForFirestore(value);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}
 
 let currentSyncStatus: SyncStatus = 'connecting';
 const syncListeners: ((status: SyncStatus) => void)[] = [];
@@ -43,7 +107,8 @@ function setSyncStatus(status: SyncStatus) {
 
 /**
  * Real-time listener for Inventory Items collection.
- * Automatically seeds the database with initial stock on first run if empty.
+ * Automatically seeds the database with initial stock on first run if empty,
+ * preserving any local user stock so data is never lost upon reloading.
  */
 export function subscribeToInventory(
   onItemsChange: (items: InventoryItem[]) => void,
@@ -66,13 +131,14 @@ export function subscribeToInventory(
     async (snapshot) => {
       setSyncStatus('connected');
 
-      // If database is completely empty on first load, seed with INITIAL_ITEMS
+      // If database is completely empty on first load, seed with current local or INITIAL_ITEMS
       if (snapshot.empty && isFirstLoad) {
         isFirstLoad = false;
         try {
-          console.log('Seeding Firestore with initial Chattha Brothers stock items...');
-          await seedInventory(INITIAL_ITEMS);
-          // The next snapshot will automatically pick up the seeded items
+          const localCache = loadInventory();
+          const itemsToSeed = localCache && localCache.length > 0 ? localCache : INITIAL_ITEMS;
+          console.log(`Seeding Firestore with ${itemsToSeed.length} inventory items...`);
+          await seedInventory(itemsToSeed);
           return;
         } catch (seedErr) {
           console.error('Failed to seed inventory:', seedErr);
@@ -88,10 +154,16 @@ export function subscribeToInventory(
           loaded.push({
             ...data,
             id: docSnap.id,
+            qty: typeof data.qty === 'number' ? data.qty : 0,
+            minQty: typeof data.minQty === 'number' ? data.minQty : 4,
+            condition: data.condition || 'New',
           });
         });
 
-        // Save local backup
+        // Always sort or preserve order by updatedAt desc
+        loaded.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+        // Save local backup so subsequent reloads are instantaneous and durable
         saveInventory(loaded);
         onItemsChange(loaded);
       } else {
@@ -114,32 +186,42 @@ export function subscribeToInventory(
 }
 
 /**
- * Seeds or resets items in Firestore
+ * Seeds or resets items in Firestore safely using sanitized batches
  */
 export async function seedInventory(itemsToSeed: InventoryItem[] = INITIAL_ITEMS): Promise<void> {
   if (!db) return;
-  const batch = writeBatch(db);
-  itemsToSeed.forEach((item) => {
-    const itemRef = doc(db!, 'items', item.id);
-    batch.set(itemRef, item);
-  });
-  await batch.commit();
+  // Firestore batches have a 500 operations limit; split in chunks if needed
+  const chunkSize = 400;
+  for (let i = 0; i < itemsToSeed.length; i += chunkSize) {
+    const chunk = itemsToSeed.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach((item) => {
+      const itemRef = doc(db!, 'items', item.id);
+      const cleanData = sanitizeForFirestore({
+        ...item,
+        updatedAt: item.updatedAt || Date.now(),
+      });
+      batch.set(itemRef, cleanData, { merge: true });
+    });
+    await batch.commit();
+  }
 }
 
 /**
- * Add or update an inventory item
+ * Add or update an inventory item in Firestore
  */
 export async function saveItemToCloud(item: InventoryItem): Promise<void> {
   if (!db) return;
+  const path = `items/${item.id}`;
   try {
     const itemRef = doc(db, 'items', item.id);
-    await setDoc(itemRef, {
+    const cleaned = sanitizeForFirestore({
       ...item,
       updatedAt: Date.now(),
     });
+    await setDoc(itemRef, cleaned, { merge: true });
   } catch (err) {
-    console.error('Failed to save item to Firestore:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 }
 
@@ -160,11 +242,12 @@ export async function updateItemQuantityInCloud(
   const itemRef = doc(db, 'items', item.id);
   const now = Date.now();
 
-  // Update item
-  await updateDoc(itemRef, {
-    qty: newQty,
-    updatedAt: now,
-  });
+  try {
+    // Safely update quantity in cloud with merge
+    await setDoc(itemRef, { qty: newQty, updatedAt: now }, { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `items/${item.id}`);
+  }
 
   // Log adjustment in adjustments collection
   try {
@@ -172,31 +255,31 @@ export async function updateItemQuantityInCloud(
     const adjustment: StockAdjustment = {
       id: adjId,
       itemId: item.id,
-      itemSummary: `${item.brand} ${item.model} (${item.size})`,
+      itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
       itemType: item.type,
       previousQty,
       newQty,
       change,
       reason,
-      note,
+      ...(note ? { note } : {}),
       timestamp: now,
     };
-    await setDoc(doc(db, 'adjustments', adjId), adjustment);
+    await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
   } catch (adjErr) {
     console.warn('Failed to log adjustment record:', adjErr);
   }
 }
 
 /**
- * Delete an inventory item
+ * Delete an inventory item from Firestore
  */
 export async function deleteItemFromCloud(itemId: string): Promise<void> {
   if (!db) return;
+  const path = `items/${itemId}`;
   try {
     await deleteDoc(doc(db, 'items', itemId));
   } catch (err) {
-    console.error('Failed to delete item from Firestore:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.DELETE, path);
   }
 }
 
@@ -219,7 +302,7 @@ export function subscribeToSettings(
         onSettingsChange(snapshot.data() as ShopSettings);
       } else {
         // Create default settings if not existing
-        setDoc(settingsDoc, DEFAULT_SETTINGS).catch(console.error);
+        setDoc(settingsDoc, sanitizeForFirestore(DEFAULT_SETTINGS), { merge: true }).catch(console.error);
         onSettingsChange(DEFAULT_SETTINGS);
       }
     },
@@ -235,7 +318,12 @@ export function subscribeToSettings(
  */
 export async function saveSettingsToCloud(settings: ShopSettings): Promise<void> {
   if (!db) return;
-  await setDoc(doc(db, 'settings', 'shop_config'), settings);
+  const path = 'settings/shop_config';
+  try {
+    await setDoc(doc(db, 'settings', 'shop_config'), sanitizeForFirestore(settings), { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+  }
 }
 
 /**

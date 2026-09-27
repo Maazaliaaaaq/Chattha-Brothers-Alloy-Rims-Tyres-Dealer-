@@ -75,7 +75,7 @@ export default function App() {
   }, []);
 
   // Quick single piece +/- adjustment inline
-  const handleQuickQuantityChange = (itemId: string, delta: number) => {
+  const handleQuickQuantityChange = async (itemId: string, delta: number) => {
     const target = items.find((i) => i.id === itemId);
     if (!target) return;
 
@@ -89,24 +89,26 @@ export default function App() {
     setItems(updatedItems);
     saveInventory(updatedItems);
 
-    // Sync to Firebase Cloud in real-time
-    updateItemQuantityInCloud(
-      target,
-      newQty,
-      delta > 0 ? 'Stock In / Restock' : 'Customer Sale'
-    ).catch((err) => {
-      console.error('Failed to sync qty change to cloud:', err);
-    });
-
     showToast(
       `${target.brand} (${target.size}): ${target.qty} → ${newQty} ${
         target.type === 'tyre' ? 'pcs' : 'sets'
       }`
     );
+
+    // Sync to Firebase Cloud in real-time
+    try {
+      await updateItemQuantityInCloud(
+        target,
+        newQty,
+        delta > 0 ? 'Stock In / Restock' : 'Customer Sale'
+      );
+    } catch (err) {
+      console.error('Failed to sync qty change to cloud:', err);
+    }
   };
 
   // Direct quantity update from modal
-  const handleSaveAdjustedQty = (itemId: string, newQty: number) => {
+  const handleSaveAdjustedQty = async (itemId: string, newQty: number) => {
     const target = items.find((i) => i.id === itemId);
     if (!target) return;
 
@@ -116,18 +118,20 @@ export default function App() {
     setItems(updatedItems);
     saveInventory(updatedItems);
 
-    // Sync to Firebase Cloud
-    updateItemQuantityInCloud(target, newQty, 'Inventory Audit Correction').catch((err) => {
-      console.error('Failed to sync adjusted qty to cloud:', err);
-    });
-
     showToast(
       `Updated ${target.brand} (${target.size}) stock to ${newQty}`
     );
+
+    // Sync to Firebase Cloud
+    try {
+      await updateItemQuantityInCloud(target, newQty, 'Inventory Audit Correction');
+    } catch (err) {
+      console.error('Failed to sync adjusted qty to cloud:', err);
+    }
   };
 
   // Save new or edited item
-  const handleSaveItem = (
+  const handleSaveItem = async (
     itemData: Omit<InventoryItem, 'id' | 'updatedAt'>,
     editId?: string
   ) => {
@@ -144,13 +148,17 @@ export default function App() {
       const updatedItems = items.map((it) => (it.id === editId ? updatedItem : it));
       setItems(updatedItems);
       saveInventory(updatedItems);
+      showToast(`Updated ${itemData.brand} in stock`);
 
       // Cloud save
-      saveItemToCloud(updatedItem).catch(console.error);
-      showToast(`Updated ${itemData.brand} in stock`);
+      try {
+        await saveItemToCloud(updatedItem);
+      } catch (err) {
+        console.error('Failed to sync item update to cloud:', err);
+      }
     } else {
       // Add new
-      const newItemId = `${itemData.type}-${Date.now().toString(36)}`;
+      const newItemId = `${itemData.type}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
       const newItem: InventoryItem = {
         ...itemData,
         id: newItemId,
@@ -160,27 +168,36 @@ export default function App() {
       setItems(updatedItems);
       saveInventory(updatedItems);
 
-      // Cloud save
-      saveItemToCloud(newItem).catch(console.error);
-
       // Switch category to the added item's type so user sees it immediately
       setActiveCategory(itemData.type);
       showToast(`Added ${newItem.brand} ${newItem.size} to stock`);
+
+      // Cloud save
+      try {
+        await saveItemToCloud(newItem);
+      } catch (err) {
+        console.error('Failed to sync new item to cloud:', err);
+      }
     }
   };
 
   // Delete item handler
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
     const target = itemToDelete;
     const updated = items.filter((i) => i.id !== target.id);
     setItems(updated);
     saveInventory(updated);
 
-    // Cloud delete
-    deleteItemFromCloud(target.id).catch(console.error);
     showToast(`Deleted ${target.brand} (${target.size}) from stock`);
     setItemToDelete(null);
+
+    // Cloud delete
+    try {
+      await deleteItemFromCloud(target.id);
+    } catch (err) {
+      console.error('Failed to sync item deletion to cloud:', err);
+    }
   };
 
   return (
