@@ -638,23 +638,49 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       {/* MODE 1: SIZES -> BRANDS (Default requested) */}
       {viewArrangement === 'size-first' && (
         sizeGroups.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-5 text-center space-y-1.5 shadow-2xs">
-            <AlertTriangle className="w-4 h-4 text-slate-400 mx-auto" />
-            <h3 className="text-xs font-bold text-slate-900">No matching stock sizes</h3>
-            <p className="text-[10px] text-slate-500">
-              No stock matches your active size search or diameter filter.
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedDiameter('all');
-                setShowOnlyAlerts(false);
-                setStockFilter('all');
-              }}
-              className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-800 border border-slate-300 mt-1 transition"
-            >
-              Reset Filters
-            </button>
+          <div className="bg-white border border-slate-200 rounded-xl p-6 text-center space-y-2 shadow-2xs">
+            {items.filter((i) => i.type === targetType).length === 0 ? (
+              <>
+                <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mx-auto border border-orange-200">
+                  {targetType === 'tyre' ? <CircleDot className="w-5 h-5" /> : <Disc className="w-5 h-5" />}
+                </div>
+                <h3 className="text-xs font-bold text-slate-900">
+                  No {targetType === 'tyre' ? 'Tyres' : 'Alloy Rims'} in Stock
+                </h3>
+                <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
+                  Your stock directory is clean and ready. Add new inventory items to start tracking stock.
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onOpenAddModal(targetType)}
+                    className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold text-[11px] inline-flex items-center gap-1 shadow-xs active:scale-95 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add {targetType === 'tyre' ? 'Tyre' : 'Rim'} Stock</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-4 h-4 text-slate-400 mx-auto" />
+                <h3 className="text-xs font-bold text-slate-900">No matching stock sizes</h3>
+                <p className="text-[10px] text-slate-500">
+                  No stock matches your active size search or diameter filter.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedDiameter('all');
+                    setShowOnlyAlerts(false);
+                    setStockFilter('all');
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-800 border border-slate-300 mt-1 transition"
+                >
+                  Reset Filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-2">

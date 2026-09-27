@@ -1,30 +1,43 @@
 import { InventoryItem, ShopSettings, StockAdjustment } from '../types';
-import { DEFAULT_SETTINGS, INITIAL_ADJUSTMENTS, INITIAL_ITEMS } from '../data/defaultStock';
+import { DEFAULT_SETTINGS, INITIAL_ADJUSTMENTS } from '../data/defaultStock';
 
 const STORAGE_KEYS = {
   ITEMS: 'chattha_inventory_items_v2',
   ADJUSTMENTS: 'chattha_stock_adjustments_v2',
   SETTINGS: 'chattha_shop_settings_v2',
+  INITIALIZED: 'chattha_initialized_flag_v2',
 };
+
+export function isSystemInitialized(): boolean {
+  return localStorage.getItem(STORAGE_KEYS.INITIALIZED) === 'true';
+}
+
+export function setSystemInitialized(val: boolean = true): void {
+  if (val) {
+    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
+  }
+}
 
 export function loadInventory(): InventoryItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ITEMS);
     if (!raw) {
-      saveInventory(INITIAL_ITEMS);
-      return INITIAL_ITEMS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_ITEMS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Failed to load inventory from localStorage', err);
-    return INITIAL_ITEMS;
+    return [];
   }
 }
 
 export function saveInventory(items: InventoryItem[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+    setSystemInitialized(true);
   } catch (err) {
     console.error('Failed to save inventory to localStorage', err);
   }
@@ -34,14 +47,13 @@ export function loadAdjustments(): StockAdjustment[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ADJUSTMENTS);
     if (!raw) {
-      saveAdjustments(INITIAL_ADJUSTMENTS);
-      return INITIAL_ADJUSTMENTS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_ADJUSTMENTS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Failed to load adjustments', err);
-    return INITIAL_ADJUSTMENTS;
+    return [];
   }
 }
 
@@ -75,16 +87,21 @@ export function saveSettings(settings: ShopSettings): void {
   }
 }
 
+export function clearAllLocalData(): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.ADJUSTMENTS, JSON.stringify([]));
+    setSystemInitialized(true);
+  } catch (err) {
+    console.error('Failed to clear local data', err);
+  }
+}
+
 export function resetAllData(): { items: InventoryItem[]; adjustments: StockAdjustment[]; settings: ShopSettings } {
-  localStorage.removeItem(STORAGE_KEYS.ITEMS);
-  localStorage.removeItem(STORAGE_KEYS.ADJUSTMENTS);
-  localStorage.removeItem(STORAGE_KEYS.SETTINGS);
-  saveInventory(INITIAL_ITEMS);
-  saveAdjustments(INITIAL_ADJUSTMENTS);
-  saveSettings(DEFAULT_SETTINGS);
+  clearAllLocalData();
   return {
-    items: INITIAL_ITEMS,
-    adjustments: INITIAL_ADJUSTMENTS,
+    items: [],
+    adjustments: [],
     settings: DEFAULT_SETTINGS,
   };
 }

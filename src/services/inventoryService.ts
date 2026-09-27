@@ -3,16 +3,18 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  getDocs,
   onSnapshot,
   writeBatch,
   query,
   orderBy,
   limit,
+  getDocFromServer,
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { InventoryItem, StockAdjustment, ShopSettings, AdjustmentReason } from '../types';
 import { INITIAL_ITEMS, DEFAULT_SETTINGS } from '../data/defaultStock';
-import { loadInventory, saveInventory } from '../utils/storage';
+import { loadInventory, saveInventory, setSystemInitialized } from '../utils/storage';
 
 export type SyncStatus = 'connecting' | 'connected' | 'error' | 'offline';
 
@@ -65,6 +67,21 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 }
 
 /**
+ * Validate connection to Firestore on initialization
+ */
+export async function testConnection(): Promise<void> {
+  if (!db) return;
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Please check your Firebase configuration.');
+    }
+  }
+}
+testConnection();
+
+/**
  * Strips any undefined fields recursively so Firestore never throws
  * "Unsupported field value: undefined" errors.
  */
@@ -107,8 +124,8 @@ function setSyncStatus(status: SyncStatus) {
 
 /**
  * Real-time listener for Inventory Items collection.
- * Automatically seeds the database with initial stock on first run if empty,
- * preserving any local user stock so data is never lost upon reloading.
+ * Reliably synchronizes with Firestore. When items are deleted or the inventory
+ * is cleared, it persists an empty state without resurrecting deleted demo items.
  */
 export function subscribeToInventory(
   onItemsChange: (items: InventoryItem[]) => void,
@@ -124,53 +141,30 @@ export function subscribeToInventory(
   const itemsCollection = collection(db, 'items');
   setSyncStatus('connecting');
 
-  let isFirstLoad = true;
-
   const unsubscribe = onSnapshot(
     itemsCollection,
-    async (snapshot) => {
+    (snapshot) => {
       setSyncStatus('connected');
+      setSystemInitialized(true);
 
-      // If database is completely empty on first load, seed with current local or INITIAL_ITEMS
-      if (snapshot.empty && isFirstLoad) {
-        isFirstLoad = false;
-        try {
-          const localCache = loadInventory();
-          const itemsToSeed = localCache && localCache.length > 0 ? localCache : INITIAL_ITEMS;
-          console.log(`Seeding Firestore with ${itemsToSeed.length} inventory items...`);
-          await seedInventory(itemsToSeed);
-          return;
-        } catch (seedErr) {
-          console.error('Failed to seed inventory:', seedErr);
-        }
-      }
-
-      isFirstLoad = false;
-
-      if (!snapshot.empty) {
-        const loaded: InventoryItem[] = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data() as InventoryItem;
-          loaded.push({
-            ...data,
-            id: docSnap.id,
-            qty: typeof data.qty === 'number' ? data.qty : 0,
-            minQty: typeof data.minQty === 'number' ? data.minQty : 4,
-            condition: data.condition || 'New',
-          });
+      const loaded: InventoryItem[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as InventoryItem;
+        loaded.push({
+          ...data,
+          id: docSnap.id,
+          qty: typeof data.qty === 'number' ? data.qty : 0,
+          minQty: typeof data.minQty === 'number' ? data.minQty : 4,
+          condition: data.condition || 'New',
         });
+      });
 
-        // Always sort or preserve order by updatedAt desc
-        loaded.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      // Always sort by updatedAt desc
+      loaded.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
-        // Save local backup so subsequent reloads are instantaneous and durable
-        saveInventory(loaded);
-        onItemsChange(loaded);
-      } else {
-        // Fallback to local
-        const local = loadInventory();
-        onItemsChange(local);
-      }
+      // Save local backup so subsequent reloads are instantaneous and accurate
+      saveInventory(loaded);
+      onItemsChange(loaded);
     },
     (error) => {
       console.error('Firestore real-time subscription error:', error);
@@ -186,7 +180,7 @@ export function subscribeToInventory(
 }
 
 /**
- * Seeds or resets items in Firestore safely using sanitized batches
+ * Seeds or restores sample items in Firestore safely using sanitized batches
  */
 export async function seedInventory(itemsToSeed: InventoryItem[] = INITIAL_ITEMS): Promise<void> {
   if (!db) return;
@@ -278,6 +272,54 @@ export async function deleteItemFromCloud(itemId: string): Promise<void> {
   const path = `items/${itemId}`;
   try {
     await deleteDoc(doc(db, 'items', itemId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Permanently delete all inventory items from Firestore (bulk delete)
+ */
+export async function clearAllItemsFromCloud(): Promise<void> {
+  if (!db) return;
+  const path = 'items';
+  try {
+    const snap = await getDocs(collection(db, 'items'));
+    const docs = snap.docs;
+    if (docs.length > 0) {
+      const chunkSize = 400;
+      for (let i = 0; i < docs.length; i += chunkSize) {
+        const chunk = docs.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+    // Record system initialization flag so Firestore never auto-reseeds
+    await setDoc(doc(db, 'settings', 'system_init'), { isInitialized: true, lastClearedAt: Date.now() }, { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+  }
+}
+
+/**
+ * Permanently clear adjustments audit history from Firestore
+ */
+export async function clearAllAdjustmentsFromCloud(): Promise<void> {
+  if (!db) return;
+  const path = 'adjustments';
+  try {
+    const snap = await getDocs(collection(db, 'adjustments'));
+    const docs = snap.docs;
+    if (docs.length > 0) {
+      const chunkSize = 400;
+      for (let i = 0; i < docs.length; i += chunkSize) {
+        const chunk = docs.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, path);
   }

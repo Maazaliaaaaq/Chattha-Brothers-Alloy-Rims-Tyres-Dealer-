@@ -1,6 +1,6 @@
 import React from 'react';
 import { InventoryItem } from '../types';
-import { Plus, CircleDot, Disc, AlertTriangle, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
+import { Plus, CircleDot, Disc, AlertTriangle, RefreshCw, Database } from 'lucide-react';
 import { SyncStatus } from '../services/inventoryService';
 
 interface HeaderProps {
@@ -10,6 +10,7 @@ interface HeaderProps {
   showOnlyAlerts: boolean;
   setShowOnlyAlerts: (val: boolean | ((prev: boolean) => boolean)) => void;
   onOpenAddModal: (type?: 'tyre' | 'rim') => void;
+  onOpenDataManagement?: () => void;
   syncStatus?: SyncStatus;
 }
 
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   showOnlyAlerts,
   setShowOnlyAlerts,
   onOpenAddModal,
+  onOpenDataManagement,
   syncStatus = 'connecting',
 }) => {
   const tyreItems = items.filter((i) => i.type === 'tyre');
@@ -77,6 +79,18 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                 <span>Offline</span>
               </div>
+            )}
+
+            {onOpenDataManagement && (
+              <button
+                type="button"
+                onClick={onOpenDataManagement}
+                title="Manage database, clear old data, or load demo stock"
+                className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] font-semibold flex items-center gap-1 shadow-2xs active:scale-95 transition"
+              >
+                <Database className="w-3 h-3 text-slate-600" />
+                <span className="hidden sm:inline">Manage Data</span>
+              </button>
             )}
 
             <button
