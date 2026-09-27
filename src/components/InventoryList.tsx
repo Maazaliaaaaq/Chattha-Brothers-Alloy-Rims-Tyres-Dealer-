@@ -91,6 +91,9 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   const [selectedDiameter, setSelectedDiameter] = useState<number | 'all'>('all');
   const [viewArrangement, setViewArrangement] = useState<ViewArrangement>('size-first');
 
+  const term = searchTerm.trim().toLowerCase();
+  const isSearching = Boolean(term);
+
   // Track which folders are open (open by default, recorded when explicitly closed)
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
@@ -155,7 +158,6 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   }, [items, targetType]);
 
   // Filter items matching current search and stock filter
-  const term = searchTerm.trim().toLowerCase();
   const filteredItems = useMemo(() => {
     return (items || []).filter((item) => {
       if (!item || item.type !== targetType) return false;
@@ -309,8 +311,6 @@ export const InventoryList: React.FC<InventoryListProps> = ({
       })
       .filter((g) => g.items.length > 0);
   }, [filteredItems, targetType]);
-
-  const isSearching = Boolean(term);
 
   // Expand / Collapse all handlers
   const handleExpandAll = () => {

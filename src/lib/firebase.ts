@@ -14,7 +14,20 @@ interface FirebaseAppletConfig {
   [key: string]: any;
 }
 
-const firebaseConfig: FirebaseAppletConfig = (rawConfig as FirebaseAppletConfig) || {};
+const DEFAULT_FIREBASE_CONFIG: FirebaseAppletConfig = {
+  projectId: "gen-lang-client-0670794076",
+  appId: "1:743112456419:web:e9d4652a77260702956dd6",
+  apiKey: "AIzaSyBZH-TmaNIL2Kr_nqiVdpQdl57zhb_It70",
+  authDomain: "gen-lang-client-0670794076.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-chatthainventory-0ba9c980-601d-4ed1-b583-cf052811b4cf",
+  storageBucket: "gen-lang-client-0670794076.firebasestorage.app",
+  messagingSenderId: "743112456419",
+};
+
+const firebaseConfig: FirebaseAppletConfig = {
+  ...DEFAULT_FIREBASE_CONFIG,
+  ...((rawConfig as FirebaseAppletConfig) || {}),
+};
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
