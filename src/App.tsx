@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem, ItemType } from './types';
-import { loadInventory, saveInventory, clearAllLocalData } from './utils/storage';
+import { loadInventory, saveInventory } from './utils/storage';
 import {
   subscribeToInventory,
   saveItemToCloud,
   updateItemQuantityInCloud,
   deleteItemFromCloud,
-  clearAllItemsFromCloud,
-  seedInventory,
   onSyncStatusChange,
   SyncStatus,
 } from './services/inventoryService';
@@ -16,7 +14,6 @@ import { InventoryList } from './components/InventoryList';
 import { ItemModal } from './components/ItemModal';
 import { AdjustStockModal } from './components/AdjustStockModal';
 import { ConfirmModal } from './components/ConfirmModal';
-import { DataManagementModal } from './components/DataManagementModal';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
@@ -37,9 +34,6 @@ export default function App() {
 
   // Delete confirmation modal state
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
-
-  // Data management modal state
-  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -206,31 +200,6 @@ export default function App() {
     }
   };
 
-  // Bulk delete all old stock data
-  const handleClearAllItems = async () => {
-    // 1. Optimistically clear local state
-    setItems([]);
-    clearAllLocalData();
-    showToast('Deleted all old stock data');
-
-    // 2. Permanently delete all items from Firestore
-    try {
-      await clearAllItemsFromCloud();
-    } catch (err) {
-      console.error('Failed to clear cloud items:', err);
-    }
-  };
-
-  // Restore sample demo items
-  const handleRestoreSampleData = async () => {
-    showToast('Loading sample demo stock...');
-    try {
-      await seedInventory();
-    } catch (err) {
-      console.error('Failed to load demo stock:', err);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white pb-14 sm:pb-6 text-[11px]">
       {/* Top Header */}
@@ -241,7 +210,6 @@ export default function App() {
         showOnlyAlerts={showOnlyAlerts}
         setShowOnlyAlerts={setShowOnlyAlerts}
         syncStatus={syncStatus}
-        onOpenDataManagement={() => setIsDataModalOpen(true)}
         onOpenAddModal={(t) => {
           setEditingItem(null);
           setInitialItemType(t || 'tyre');
@@ -338,15 +306,6 @@ export default function App() {
         isDestructive={true}
         onConfirm={handleConfirmDelete}
         onClose={() => setItemToDelete(null)}
-      />
-
-      {/* Database & Stock Data Management Modal */}
-      <DataManagementModal
-        isOpen={isDataModalOpen}
-        onClose={() => setIsDataModalOpen(false)}
-        items={items}
-        onClearAllItems={handleClearAllItems}
-        onRestoreSampleData={handleRestoreSampleData}
       />
 
       {/* Instant Toast Notification */}
