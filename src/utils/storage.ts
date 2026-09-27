@@ -43,6 +43,30 @@ export function setSystemInitialized(val: boolean = true): void {
   }
 }
 
+export function sanitizeItem(raw: any): InventoryItem {
+  return {
+    id: String(raw?.id || `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`),
+    type: raw?.type === 'rim' ? 'rim' : 'tyre',
+    brand: String(raw?.brand || 'Brand'),
+    model: String(raw?.model || ''),
+    size: String(raw?.size || (raw?.type === 'rim' ? '15 inch' : '195/65 R15')),
+    condition: raw?.condition === 'Used' ? 'Used' : 'New',
+    tyreType: raw?.tyreType === 'Tube' ? 'Tube' : 'Tubeless',
+    loadIndex: raw?.loadIndex ? String(raw.loadIndex) : undefined,
+    width: raw?.width ? String(raw.width) : undefined,
+    pcd: raw?.pcd ? String(raw.pcd) : undefined,
+    offset: raw?.offset ? String(raw.offset) : undefined,
+    finish: raw?.finish ? String(raw.finish) : undefined,
+    buyPrice: typeof raw?.buyPrice === 'number' && !isNaN(raw.buyPrice) ? raw.buyPrice : 0,
+    sellPrice: typeof raw?.sellPrice === 'number' && !isNaN(raw.sellPrice) ? raw.sellPrice : 0,
+    qty: typeof raw?.qty === 'number' && !isNaN(raw.qty) ? Math.max(0, raw.qty) : 0,
+    minQty: typeof raw?.minQty === 'number' && !isNaN(raw.minQty) ? Math.max(0, raw.minQty) : 4,
+    rack: String(raw?.rack || 'Rack-1'),
+    notes: raw?.notes ? String(raw.notes) : undefined,
+    updatedAt: typeof raw?.updatedAt === 'number' && !isNaN(raw.updatedAt) ? raw.updatedAt : Date.now(),
+  };
+}
+
 export function loadInventory(): InventoryItem[] {
   if (typeof localStorage === 'undefined') return [];
   try {
@@ -51,7 +75,8 @@ export function loadInventory(): InventoryItem[] {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => Boolean(item && typeof item === 'object')).map(sanitizeItem);
   } catch (err) {
     console.error('Failed to load inventory from localStorage', err);
     return [];

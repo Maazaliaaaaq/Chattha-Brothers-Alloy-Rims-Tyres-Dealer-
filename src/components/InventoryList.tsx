@@ -110,10 +110,11 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
   // Base list of predefined sizes & discovered sizes
   const allSizesForType = useMemo(() => {
-    const defaultList = targetType === 'tyre' ? POPULAR_TYRE_SIZES : POPULAR_RIM_SIZES;
-    const existingInItems = items
-      .filter((i) => i.type === targetType)
-      .map((i) => i.size);
+    const defaultList = targetType === 'rim' ? POPULAR_RIM_SIZES : POPULAR_TYRE_SIZES;
+    const existingInItems = (items || [])
+      .filter((i) => i && i.type === targetType && i.size)
+      .map((i) => String(i.size).trim())
+      .filter(Boolean);
     const combined = Array.from(new Set([...defaultList, ...existingInItems]));
     return combined.sort((a, b) => compareSizes(a, b, targetType));
   }, [items, targetType]);
@@ -122,24 +123,25 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   const diameterSummary = useMemo(() => {
     const diametersMap = new Map<number, { count: number; totalQty: number; sizes: Set<string> }>();
 
-    items
-      .filter((it) => it.type === targetType)
+    (items || [])
+      .filter((it) => it && it.type === targetType && it.size)
       .forEach((it) => {
-        const parsed = parseItemSize(it.size, targetType);
+        const parsed = parseItemSize(it.size || '', targetType);
         const d = parsed.diameter;
+        const q = typeof it.qty === 'number' && !isNaN(it.qty) ? it.qty : 0;
         if (d > 0) {
           const current = diametersMap.get(d) || { count: 0, totalQty: 0, sizes: new Set<string>() };
           current.count += 1;
-          current.totalQty += it.qty;
-          current.sizes.add(it.size);
+          current.totalQty += q;
+          if (it.size) current.sizes.add(it.size);
           diametersMap.set(d, current);
         }
       });
 
     // Preset standard diameters to ensure easy tapping even if 0 currently
-    const standardPills = targetType === 'tyre'
-      ? [12, 13, 14, 15, 16, 17, 18, 19, 20]
-      : [13, 14, 15, 16, 17, 18, 19, 20];
+    const standardPills = targetType === 'rim'
+      ? [13, 14, 15, 16, 17, 18, 19, 20]
+      : [12, 13, 14, 15, 16, 17, 18, 19, 20];
 
     return standardPills.map((inch) => {
       const data = diametersMap.get(inch) || { count: 0, totalQty: 0, sizes: new Set<string>() };
@@ -155,28 +157,31 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   // Filter items matching current search and stock filter
   const term = searchTerm.trim().toLowerCase();
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (item.type !== targetType) return false;
+    return (items || []).filter((item) => {
+      if (!item || item.type !== targetType) return false;
+
+      const qty = typeof item.qty === 'number' && !isNaN(item.qty) ? item.qty : 0;
+      const minQty = typeof item.minQty === 'number' && !isNaN(item.minQty) ? item.minQty : 4;
 
       // Stock status filter
-      if (effectiveStockFilter === 'instock' && item.qty === 0) return false;
-      if (effectiveStockFilter === 'low' && item.qty > item.minQty) return false;
-      if (effectiveStockFilter === 'out' && item.qty > 0) return false;
+      if (effectiveStockFilter === 'instock' && qty === 0) return false;
+      if (effectiveStockFilter === 'low' && qty > minQty) return false;
+      if (effectiveStockFilter === 'out' && qty > 0) return false;
 
       // Diameter filter
       if (selectedDiameter !== 'all') {
-        const parsed = parseItemSize(item.size, targetType);
+        const parsed = parseItemSize(item.size || '', targetType);
         if (parsed.diameter !== selectedDiameter) return false;
       }
 
       // Search term
       if (term) {
-        const matchesBrand = item.brand.toLowerCase().includes(term);
-        const matchesSize = item.size.toLowerCase().includes(term);
-        const matchesModel = item.model.toLowerCase().includes(term);
-        const matchesRack = item.rack.toLowerCase().includes(term);
-        const matchesPcd = item.pcd?.toLowerCase().includes(term);
-        const parsed = parseItemSize(item.size, targetType);
+        const matchesBrand = (item.brand || '').toLowerCase().includes(term);
+        const matchesSize = (item.size || '').toLowerCase().includes(term);
+        const matchesModel = (item.model || '').toLowerCase().includes(term);
+        const matchesRack = (item.rack || '').toLowerCase().includes(term);
+        const matchesPcd = (item.pcd || '').toLowerCase().includes(term);
+        const parsed = parseItemSize(item.size || '', targetType);
         const matchesDiameter = `${parsed.diameter}` === term || `${parsed.diameter} inch`.includes(term);
 
         if (!matchesBrand && !matchesSize && !matchesModel && !matchesRack && !matchesPcd && !matchesDiameter) {

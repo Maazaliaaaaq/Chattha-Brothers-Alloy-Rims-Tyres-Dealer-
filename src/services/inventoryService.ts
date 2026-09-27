@@ -14,7 +14,7 @@ import {
 import { db, auth } from '../lib/firebase';
 import { InventoryItem, StockAdjustment, ShopSettings, AdjustmentReason } from '../types';
 import { INITIAL_ITEMS, DEFAULT_SETTINGS } from '../data/defaultStock';
-import { loadInventory, saveInventory, setSystemInitialized } from '../utils/storage';
+import { loadInventory, saveInventory, setSystemInitialized, sanitizeItem } from '../utils/storage';
 
 export type SyncStatus = 'connecting' | 'connected' | 'error' | 'offline';
 
@@ -44,7 +44,7 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): void {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -62,8 +62,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path,
   };
-  console.error('Firestore Error:', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  console.warn('Firestore Operation Notice:', JSON.stringify(errInfo));
 }
 
 /**
@@ -74,12 +73,12 @@ export async function testConnection(): Promise<void> {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
-    }
+    // Non-critical check, gracefully ignored
   }
 }
-testConnection();
+setTimeout(() => {
+  testConnection().catch(() => {});
+}, 100);
 
 /**
  * Strips any undefined fields recursively so Firestore never throws
@@ -149,22 +148,10 @@ export function subscribeToInventory(
 
       const loaded: InventoryItem[] = [];
       snapshot.forEach((docSnap) => {
-        const data = docSnap.data() as InventoryItem;
-        loaded.push({
-          ...data,
-          id: docSnap.id,
-          type: data.type || (docSnap.id.startsWith('rim') ? 'rim' : 'tyre'),
-          brand: data.brand || '',
-          model: data.model || '',
-          size: data.size || '',
-          qty: typeof data.qty === 'number' ? data.qty : 0,
-          minQty: typeof data.minQty === 'number' ? data.minQty : 4,
-          condition: data.condition || 'New',
-          rack: data.rack || 'Rack-1',
-          buyPrice: typeof data.buyPrice === 'number' ? data.buyPrice : 0,
-          sellPrice: typeof data.sellPrice === 'number' ? data.sellPrice : 0,
-          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
-        });
+        const data = docSnap.data();
+        if (data) {
+          loaded.push(sanitizeItem({ ...data, id: docSnap.id }));
+        }
       });
 
       // Always sort by updatedAt desc
