@@ -231,12 +231,13 @@ export async function updateItemQuantityInCloud(
   item: InventoryItem,
   newQty: number,
   reason: AdjustmentReason = 'Quick Adjustment',
-  note?: string
+  note?: string,
+  explicitPreviousQty?: number
 ): Promise<void> {
   if (!db) return;
-  const previousQty = item.qty;
+  const previousQty = explicitPreviousQty !== undefined ? explicitPreviousQty : item.qty;
   const change = newQty - previousQty;
-  if (change === 0) return;
+  if (change === 0 && item.qty === newQty) return;
 
   const itemRef = doc(db, 'items', item.id);
   const now = Date.now();

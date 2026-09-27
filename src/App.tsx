@@ -78,14 +78,16 @@ export default function App() {
   const handleQuickQuantityChange = async (itemId: string, delta: number) => {
     let targetItem: InventoryItem | undefined;
     let targetNewQty = 0;
+    let oldQty = 0;
 
     setItems((prev) => {
       const target = prev.find((i) => i.id === itemId);
       if (!target) return prev;
-      const newQty = Math.max(0, target.qty + delta);
-      if (newQty === target.qty) return prev;
+      oldQty = target.qty;
+      const newQty = Math.max(0, oldQty + delta);
+      if (newQty === oldQty) return prev;
 
-      targetItem = target;
+      targetItem = { ...target };
       targetNewQty = newQty;
 
       const next = prev.map((it) =>
@@ -98,7 +100,7 @@ export default function App() {
     if (!targetItem) return;
 
     showToast(
-      `${targetItem.brand} (${targetItem.size}): ${targetItem.qty} → ${targetNewQty} ${
+      `${targetItem.brand} (${targetItem.size}): ${oldQty} → ${targetNewQty} ${
         targetItem.type === 'tyre' ? 'pcs' : 'sets'
       }`
     );
@@ -108,7 +110,9 @@ export default function App() {
       await updateItemQuantityInCloud(
         targetItem,
         targetNewQty,
-        delta > 0 ? 'Stock In / Restock' : 'Customer Sale'
+        delta > 0 ? 'Stock In / Restock' : 'Customer Sale',
+        undefined,
+        oldQty
       );
     } catch (err) {
       console.error('Failed to sync qty change to cloud:', err);
@@ -118,10 +122,13 @@ export default function App() {
   // Direct quantity update from modal
   const handleSaveAdjustedQty = async (itemId: string, newQty: number) => {
     let targetItem: InventoryItem | undefined;
+    let oldQty = 0;
     setItems((prev) => {
       const target = prev.find((i) => i.id === itemId);
       if (!target) return prev;
-      targetItem = target;
+      oldQty = target.qty;
+      if (newQty === oldQty) return prev;
+      targetItem = { ...target };
       const next = prev.map((it) =>
         it.id === itemId ? { ...it, qty: newQty, updatedAt: Date.now() } : it
       );
@@ -135,7 +142,7 @@ export default function App() {
 
     // Sync to Firebase Cloud
     try {
-      await updateItemQuantityInCloud(targetItem, newQty, 'Inventory Audit Correction');
+      await updateItemQuantityInCloud(targetItem, newQty, 'Inventory Audit Correction', undefined, oldQty);
     } catch (err) {
       console.error('Failed to sync adjusted qty to cloud:', err);
     }

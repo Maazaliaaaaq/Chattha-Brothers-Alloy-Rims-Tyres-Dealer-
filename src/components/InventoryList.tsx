@@ -96,7 +96,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
   const toggleFolder = (folderKey: string) => {
     setExpandedFolders((prev) => {
-      const currentIsOpen = isSearching || prev[folderKey] !== false;
+      const currentIsOpen = isSearching || prev[folderKey] === true;
       return {
         ...prev,
         [folderKey]: !currentIsOpen,
@@ -309,25 +309,25 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
   // Expand / Collapse all handlers
   const handleExpandAll = () => {
-    setExpandedFolders({});
-  };
-
-  const handleCollapseAll = () => {
     const next: Record<string, boolean> = {};
     if (viewArrangement === 'size-first') {
       sizeGroups.forEach((g) => {
-        next[`size-${g.size}`] = false;
+        next[`size-${g.size}`] = true;
       });
     } else if (viewArrangement === 'diameter-first') {
       diameterGroups.forEach((g) => {
-        next[`dia-${g.diameter}`] = false;
+        next[`dia-${g.diameter}`] = true;
       });
     } else {
       brandGroups.forEach((g) => {
-        next[`brand-${g.brand}`] = false;
+        next[`brand-${g.brand}`] = true;
       });
     }
     setExpandedFolders(next);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedFolders({});
   };
 
   // Quick prompt answer data for the selected diameter (e.g. 16 inch)
@@ -689,7 +689,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           <div className="space-y-2">
             {sizeGroups.map((group) => {
               const folderKey = `size-${group.size}`;
-              const isOpen = isSearching || expandedFolders[folderKey] !== false;
+              const isOpen = isSearching || expandedFolders[folderKey] === true;
 
               return (
                 <div
@@ -972,7 +972,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           <div className="space-y-2">
             {diameterGroups.map((dia) => {
               const folderKey = `dia-${dia.diameter}`;
-              const isOpen = isSearching || expandedFolders[folderKey] !== false;
+              const isOpen = isSearching || expandedFolders[folderKey] === true;
 
               return (
                 <div
@@ -1118,7 +1118,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         <div className="space-y-2">
           {brandGroups.map((group) => {
             const folderKey = `brand-${group.brand}`;
-            const isOpen = isSearching || expandedFolders[folderKey] !== false;
+            const isOpen = isSearching || expandedFolders[folderKey] === true;
 
             return (
               <div
