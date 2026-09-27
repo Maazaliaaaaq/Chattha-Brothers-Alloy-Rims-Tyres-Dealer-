@@ -142,6 +142,7 @@ export function subscribeToInventory(
 
   const unsubscribe = onSnapshot(
     itemsCollection,
+    { includeMetadataChanges: false },
     (snapshot) => {
       setSyncStatus('connected');
       setSystemInitialized(true);
@@ -211,8 +212,10 @@ export async function saveItemToCloud(item: InventoryItem): Promise<void> {
   }
 }
 
+const pendingQtyUpdates = new Map<string, { timer: any; targetQty: number; origQty: number; item: InventoryItem; reason: AdjustmentReason; note?: string }>();
+
 /**
- * Direct quantity change with adjustment audit logging
+ * Direct quantity change with adjustment audit logging and rapid-tap coalescing
  */
 export async function updateItemQuantityInCloud(
   item: InventoryItem,
@@ -226,35 +229,59 @@ export async function updateItemQuantityInCloud(
   const change = newQty - previousQty;
   if (change === 0 && item.qty === newQty) return;
 
-  const itemRef = doc(db, 'items', item.id);
-  const now = Date.now();
+  const existing = pendingQtyUpdates.get(item.id);
+  const effectiveOrigQty = existing ? existing.origQty : previousQty;
 
-  try {
-    // Safely update quantity in cloud with merge
-    await setDoc(itemRef, { qty: newQty, updatedAt: now }, { merge: true });
-  } catch (err) {
-    handleFirestoreError(err, OperationType.UPDATE, `items/${item.id}`);
+  if (existing) {
+    clearTimeout(existing.timer);
   }
 
-  // Log adjustment in adjustments collection
-  try {
-    const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
-    const adjustment: StockAdjustment = {
-      id: adjId,
-      itemId: item.id,
-      itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
-      itemType: item.type,
-      previousQty,
-      newQty,
-      change,
-      reason,
-      ...(note ? { note } : {}),
-      timestamp: now,
-    };
-    await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
-  } catch (adjErr) {
-    console.warn('Failed to log adjustment record:', adjErr);
-  }
+  const performSync = async (finalQty: number, initialQty: number) => {
+    pendingQtyUpdates.delete(item.id);
+    if (!db) return;
+    const now = Date.now();
+    const itemRef = doc(db, 'items', item.id);
+    try {
+      await setDoc(itemRef, { qty: finalQty, updatedAt: now }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `items/${item.id}`);
+    }
+
+    const finalChange = finalQty - initialQty;
+    if (finalChange !== 0) {
+      try {
+        const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
+        const adjustment: StockAdjustment = {
+          id: adjId,
+          itemId: item.id,
+          itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
+          itemType: item.type,
+          previousQty: initialQty,
+          newQty: finalQty,
+          change: finalChange,
+          reason,
+          ...(note ? { note } : {}),
+          timestamp: now,
+        };
+        await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
+      } catch (adjErr) {
+        console.warn('Failed to log adjustment record:', adjErr);
+      }
+    }
+  };
+
+  const timer = setTimeout(() => {
+    performSync(newQty, effectiveOrigQty);
+  }, 200);
+
+  pendingQtyUpdates.set(item.id, {
+    timer,
+    targetQty: newQty,
+    origQty: effectiveOrigQty,
+    item,
+    reason,
+    note,
+  });
 }
 
 /**

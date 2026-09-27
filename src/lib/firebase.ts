@@ -1,5 +1,13 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+  doc,
+  getDocFromServer,
+} from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import rawConfig from '../../firebase-applet-config.json';
 
@@ -42,10 +50,24 @@ try {
         ? firebaseConfig.firestoreDatabaseId
         : undefined;
 
-    db = getFirestore(app, dbId);
+    try {
+      db = initializeFirestore(
+        app,
+        {
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        },
+        dbId
+      );
+    } catch {
+      // If already initialized or persistent cache not supported in environment
+      db = getFirestore(app, dbId);
+    }
+
     auth = getAuth(app);
 
-    // Non-blocking connection check
+    // Non-blocking background connectivity test
     if (db) {
       getDocFromServer(doc(db, 'test', 'connection')).catch(() => {
         // silently handled
@@ -59,5 +81,6 @@ try {
 }
 
 export { app, db, auth, firebaseConfig };
+
 
 
