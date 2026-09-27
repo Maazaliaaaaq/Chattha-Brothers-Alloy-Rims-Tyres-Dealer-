@@ -1,11 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import {
-  initializeFirestore,
-  getFirestore,
-  Firestore,
-  doc,
-  getDocFromServer,
-} from 'firebase/firestore';
+import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import rawConfig from '../../firebase-applet-config.json';
 
@@ -35,36 +29,22 @@ try {
         ? firebaseConfig.firestoreDatabaseId
         : undefined;
 
-    // Use initializeFirestore with auto-detect long polling to ensure bulletproof
-    // real-time sync inside browser iframes and Google Cloud Run proxies
-    try {
-      db = initializeFirestore(
-        app,
-        {
-          experimentalAutoDetectLongPolling: true,
-        },
-        dbId
-      );
-    } catch {
-      db = getFirestore(app, dbId);
-    }
-
+    db = getFirestore(app, dbId);
     auth = getAuth(app);
 
-    // Test connection as instructed in Firebase guidelines
+    // Non-blocking connection check
     if (db) {
-      getDocFromServer(doc(db, 'test', 'connection')).catch((error) => {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error('Please check your Firebase configuration.');
-        }
+      getDocFromServer(doc(db, 'test', 'connection')).catch(() => {
+        // silently handled
       });
     }
   } else {
-    console.warn('Firebase configuration missing required keys, falling back to local mode.');
+    console.warn('Firebase configuration missing required keys, using offline local mode.');
   }
 } catch (e) {
-  console.warn('Firebase initialization skipped/fallback:', e);
+  console.warn('Firebase initialization fallback:', e);
 }
 
 export { app, db, auth, firebaseConfig };
+
 
