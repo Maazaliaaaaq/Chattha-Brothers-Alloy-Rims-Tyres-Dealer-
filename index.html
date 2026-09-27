@@ -22,34 +22,6 @@
   <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      (function() {
-        var isDev = window.location.port === '3000' ||
-                    window.location.hostname.includes('run.app') ||
-                    window.location.hostname.includes('webcontainer') ||
-                    !!window.__vite_plugin_react_preamble_installed__;
-
-        if (!isDev) {
-          var hasBundledScript = Array.from(document.scripts).some(function(s) {
-            return s.src && s.src.indexOf('assets/index.js') !== -1;
-          });
-
-          if (!hasBundledScript) {
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.crossOrigin = 'anonymous';
-            link.href = './assets/index.css';
-            document.head.appendChild(link);
-
-            var script = document.createElement('script');
-            script.type = 'module';
-            script.crossOrigin = 'anonymous';
-            script.src = './assets/index.js';
-            document.body.appendChild(script);
-          }
-        }
-      })();
-    </script>
   </body>
 </html>
 

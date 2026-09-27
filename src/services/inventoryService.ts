@@ -153,9 +153,17 @@ export function subscribeToInventory(
         loaded.push({
           ...data,
           id: docSnap.id,
+          type: data.type || (docSnap.id.startsWith('rim') ? 'rim' : 'tyre'),
+          brand: data.brand || '',
+          model: data.model || '',
+          size: data.size || '',
           qty: typeof data.qty === 'number' ? data.qty : 0,
           minQty: typeof data.minQty === 'number' ? data.minQty : 4,
           condition: data.condition || 'New',
+          rack: data.rack || 'Rack-1',
+          buyPrice: typeof data.buyPrice === 'number' ? data.buyPrice : 0,
+          sellPrice: typeof data.sellPrice === 'number' ? data.sellPrice : 0,
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
         });
       });
 
@@ -167,11 +175,8 @@ export function subscribeToInventory(
       onItemsChange(loaded);
     },
     (error) => {
-      console.error('Firestore real-time subscription error:', error);
+      console.warn('Firestore real-time subscription status:', error);
       setSyncStatus('offline');
-      // Fallback to local cache
-      const local = loadInventory();
-      onItemsChange(local);
       if (onError) onError(error);
     }
   );

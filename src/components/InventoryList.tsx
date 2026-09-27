@@ -91,14 +91,17 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   const [selectedDiameter, setSelectedDiameter] = useState<number | 'all'>('all');
   const [viewArrangement, setViewArrangement] = useState<ViewArrangement>('size-first');
 
-  // Track which folders are open
+  // Track which folders are open (open by default, recorded when explicitly closed)
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
   const toggleFolder = (folderKey: string) => {
-    setExpandedFolders((prev) => ({
-      ...prev,
-      [folderKey]: !prev[folderKey],
-    }));
+    setExpandedFolders((prev) => {
+      const currentIsOpen = isSearching || prev[folderKey] !== false;
+      return {
+        ...prev,
+        [folderKey]: !currentIsOpen,
+      };
+    });
   };
 
   const effectiveStockFilter = showOnlyAlerts ? 'low' : stockFilter;
@@ -306,25 +309,25 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
   // Expand / Collapse all handlers
   const handleExpandAll = () => {
-    const next: Record<string, boolean> = {};
-    if (viewArrangement === 'size-first') {
-      sizeGroups.forEach((g) => {
-        next[`size-${g.size}`] = true;
-      });
-    } else if (viewArrangement === 'diameter-first') {
-      diameterGroups.forEach((g) => {
-        next[`dia-${g.diameter}`] = true;
-      });
-    } else {
-      brandGroups.forEach((g) => {
-        next[`brand-${g.brand}`] = true;
-      });
-    }
-    setExpandedFolders(next);
+    setExpandedFolders({});
   };
 
   const handleCollapseAll = () => {
-    setExpandedFolders({});
+    const next: Record<string, boolean> = {};
+    if (viewArrangement === 'size-first') {
+      sizeGroups.forEach((g) => {
+        next[`size-${g.size}`] = false;
+      });
+    } else if (viewArrangement === 'diameter-first') {
+      diameterGroups.forEach((g) => {
+        next[`dia-${g.diameter}`] = false;
+      });
+    } else {
+      brandGroups.forEach((g) => {
+        next[`brand-${g.brand}`] = false;
+      });
+    }
+    setExpandedFolders(next);
   };
 
   // Quick prompt answer data for the selected diameter (e.g. 16 inch)
@@ -686,7 +689,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           <div className="space-y-2">
             {sizeGroups.map((group) => {
               const folderKey = `size-${group.size}`;
-              const isOpen = isSearching || Boolean(expandedFolders[folderKey]);
+              const isOpen = isSearching || expandedFolders[folderKey] !== false;
 
               return (
                 <div
@@ -969,7 +972,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
           <div className="space-y-2">
             {diameterGroups.map((dia) => {
               const folderKey = `dia-${dia.diameter}`;
-              const isOpen = isSearching || Boolean(expandedFolders[folderKey]);
+              const isOpen = isSearching || expandedFolders[folderKey] !== false;
 
               return (
                 <div
@@ -1079,6 +1082,22 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                                   >
                                     Adjust
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEditModal(item)}
+                                    className="p-1 rounded bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200"
+                                    title="Edit item"
+                                  >
+                                    <Edit2 className="w-2.5 h-2.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onRequestDelete(item)}
+                                    className="p-1 rounded bg-slate-100 text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200"
+                                    title="Delete item"
+                                  >
+                                    <Trash2 className="w-2.5 h-2.5 text-rose-500" />
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -1099,7 +1118,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         <div className="space-y-2">
           {brandGroups.map((group) => {
             const folderKey = `brand-${group.brand}`;
-            const isOpen = isSearching || Boolean(expandedFolders[folderKey]);
+            const isOpen = isSearching || expandedFolders[folderKey] !== false;
 
             return (
               <div
@@ -1146,6 +1165,22 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                             className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-emerald-700 flex items-center justify-center font-bold"
                           >
                             +
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenEditModal(item)}
+                            className="p-1 rounded bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 ml-1"
+                            title="Edit item"
+                          >
+                            <Edit2 className="w-2.5 h-2.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onRequestDelete(item)}
+                            className="p-1 rounded bg-slate-100 text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-2.5 h-2.5 text-rose-500" />
                           </button>
                         </div>
                       </div>

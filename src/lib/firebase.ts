@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
-import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
+import {
+  initializeFirestore,
+  getFirestore,
+  Firestore,
+  doc,
+  getDocFromServer,
+} from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
 import rawConfig from '../../firebase-applet-config.json';
 
 interface FirebaseAppletConfig {
@@ -22,21 +28,26 @@ let auth: Auth | null = null;
 
 try {
   if (firebaseConfig.projectId && firebaseConfig.apiKey) {
-    app = getApps().length > 0 ? getApp() : initializeApp({
-      projectId: firebaseConfig.projectId,
-      appId: firebaseConfig.appId,
-      apiKey: firebaseConfig.apiKey,
-      authDomain: firebaseConfig.authDomain,
-      storageBucket: firebaseConfig.storageBucket,
-      messagingSenderId: firebaseConfig.messagingSenderId,
-    });
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-    db = getFirestore(
-      app,
+    const dbId =
       firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
         ? firebaseConfig.firestoreDatabaseId
-        : undefined
-    );
+        : undefined;
+
+    // Use initializeFirestore with auto-detect long polling to ensure bulletproof
+    // real-time sync inside browser iframes and Google Cloud Run proxies
+    try {
+      db = initializeFirestore(
+        app,
+        {
+          experimentalAutoDetectLongPolling: true,
+        },
+        dbId
+      );
+    } catch {
+      db = getFirestore(app, dbId);
+    }
 
     auth = getAuth(app);
 

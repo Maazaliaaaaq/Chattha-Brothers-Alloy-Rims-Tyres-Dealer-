@@ -2,25 +2,49 @@ import { InventoryItem, ShopSettings, StockAdjustment } from '../types';
 import { DEFAULT_SETTINGS, INITIAL_ADJUSTMENTS } from '../data/defaultStock';
 
 const STORAGE_KEYS = {
-  ITEMS: 'chattha_inventory_items_v2',
-  ADJUSTMENTS: 'chattha_stock_adjustments_v2',
-  SETTINGS: 'chattha_shop_settings_v2',
-  INITIALIZED: 'chattha_initialized_flag_v2',
+  ITEMS: 'chattha_inventory_items_v3',
+  ADJUSTMENTS: 'chattha_stock_adjustments_v3',
+  SETTINGS: 'chattha_shop_settings_v3',
+  INITIALIZED: 'chattha_initialized_flag_v3',
 };
 
+// Purge legacy demo caches from older versions so old demo data never resurfaces
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    const legacyKeys = [
+      'chattha_inventory_items',
+      'chattha_inventory_items_v1',
+      'chattha_inventory_items_v2',
+      'chattha_stock_adjustments',
+      'chattha_stock_adjustments_v1',
+      'chattha_stock_adjustments_v2',
+    ];
+    legacyKeys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // ignore
+  }
+}
+
 export function isSystemInitialized(): boolean {
+  if (typeof localStorage === 'undefined') return true;
   return localStorage.getItem(STORAGE_KEYS.INITIALIZED) === 'true';
 }
 
 export function setSystemInitialized(val: boolean = true): void {
-  if (val) {
-    localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
+  if (typeof localStorage === 'undefined') return;
+  try {
+    if (val) {
+      localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
+    }
+  } catch {
+    // ignore
   }
 }
 
 export function loadInventory(): InventoryItem[] {
+  if (typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ITEMS);
     if (!raw) {
@@ -35,6 +59,7 @@ export function loadInventory(): InventoryItem[] {
 }
 
 export function saveInventory(items: InventoryItem[]): void {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
     setSystemInitialized(true);
@@ -44,6 +69,7 @@ export function saveInventory(items: InventoryItem[]): void {
 }
 
 export function loadAdjustments(): StockAdjustment[] {
+  if (typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ADJUSTMENTS);
     if (!raw) {
@@ -58,6 +84,7 @@ export function loadAdjustments(): StockAdjustment[] {
 }
 
 export function saveAdjustments(adjustments: StockAdjustment[]): void {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEYS.ADJUSTMENTS, JSON.stringify(adjustments));
   } catch (err) {
@@ -66,6 +93,7 @@ export function saveAdjustments(adjustments: StockAdjustment[]): void {
 }
 
 export function loadSettings(): ShopSettings {
+  if (typeof localStorage === 'undefined') return DEFAULT_SETTINGS;
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     if (!raw) {
@@ -80,6 +108,7 @@ export function loadSettings(): ShopSettings {
 }
 
 export function saveSettings(settings: ShopSettings): void {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   } catch (err) {
@@ -88,6 +117,7 @@ export function saveSettings(settings: ShopSettings): void {
 }
 
 export function clearAllLocalData(): void {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.ADJUSTMENTS, JSON.stringify([]));
