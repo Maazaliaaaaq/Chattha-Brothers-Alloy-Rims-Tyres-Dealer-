@@ -121,6 +121,115 @@ function setSyncStatus(status: SyncStatus) {
   }
 }
 
+interface PendingItemUpdate {
+  item: InventoryItem;
+  targetQty: number;
+  initialQty: number;
+  reason: AdjustmentReason;
+  note?: string;
+  timer: any;
+  inFlight: boolean;
+  queuedTargetQty?: number;
+  queuedItem?: InventoryItem;
+  queuedReason?: AdjustmentReason;
+  queuedNote?: string;
+}
+
+const pendingUpdates = new Map<string, PendingItemUpdate>();
+
+async function flushPendingUpdate(itemId: string): Promise<void> {
+  const pending = pendingUpdates.get(itemId);
+  if (!pending) return;
+
+  if (pending.timer) {
+    clearTimeout(pending.timer);
+    pending.timer = null;
+  }
+
+  if (pending.inFlight) {
+    return;
+  }
+
+  pending.inFlight = true;
+  const currentTargetQty = pending.targetQty;
+  const currentInitialQty = pending.initialQty;
+  const currentItem = pending.item;
+  const currentReason = pending.reason;
+  const currentNote = pending.note;
+
+  if (!db) {
+    pendingUpdates.delete(itemId);
+    return;
+  }
+
+  const path = `items/${itemId}`;
+  const now = Date.now();
+  const fullItem: InventoryItem = {
+    ...currentItem,
+    qty: currentTargetQty,
+    updatedAt: now,
+  };
+
+  try {
+    const itemRef = doc(db, 'items', itemId);
+    const cleanedItem = sanitizeForFirestore(fullItem);
+    await setDoc(itemRef, cleanedItem, { merge: true });
+
+    // Adjustment log
+    const change = currentTargetQty - currentInitialQty;
+    if (change !== 0) {
+      try {
+        const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
+        const adjustment: StockAdjustment = {
+          id: adjId,
+          itemId,
+          itemSummary: `${fullItem.brand} ${fullItem.model || ''} (${fullItem.size})`.trim(),
+          itemType: fullItem.type,
+          previousQty: currentInitialQty,
+          newQty: currentTargetQty,
+          change,
+          reason: currentReason,
+          ...(currentNote ? { note: currentNote } : {}),
+          timestamp: now,
+        };
+        await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
+      } catch (adjErr) {
+        console.warn('Failed to log adjustment record:', adjErr);
+      }
+    }
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, path);
+  } finally {
+    const active = pendingUpdates.get(itemId);
+    if (active) {
+      active.inFlight = false;
+      if (active.queuedTargetQty !== undefined && active.queuedItem) {
+        active.targetQty = active.queuedTargetQty;
+        active.initialQty = currentTargetQty;
+        active.item = active.queuedItem;
+        active.reason = active.queuedReason || currentReason;
+        active.note = active.queuedNote;
+        delete active.queuedTargetQty;
+        delete active.queuedItem;
+        delete active.queuedReason;
+        delete active.queuedNote;
+        flushPendingUpdate(itemId);
+      } else {
+        pendingUpdates.delete(itemId);
+      }
+    }
+  }
+}
+
+// Window beforeunload listener to flush any pending queue immediately
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    pendingUpdates.forEach((_, itemId) => {
+      flushPendingUpdate(itemId);
+    });
+  });
+}
+
 /**
  * Real-time listener for Inventory Items collection.
  * Reliably synchronizes with Firestore. When items are deleted or the inventory
@@ -151,7 +260,13 @@ export function subscribeToInventory(
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         if (data) {
-          loaded.push(sanitizeItem({ ...data, id: docSnap.id }));
+          const sanitized = sanitizeItem({ ...data, id: docSnap.id });
+          // Preserve local in-flight or debounced quantity changes so older snapshots never revert rapid clicks
+          const pending = pendingUpdates.get(docSnap.id);
+          if (pending) {
+            sanitized.qty = pending.queuedTargetQty !== undefined ? pending.queuedTargetQty : pending.targetQty;
+          }
+          loaded.push(sanitized);
         }
       });
 
@@ -198,6 +313,12 @@ export async function seedInventory(itemsToSeed: InventoryItem[] = INITIAL_ITEMS
  * Add or update an inventory item in Firestore
  */
 export async function saveItemToCloud(item: InventoryItem): Promise<void> {
+  const pending = pendingUpdates.get(item.id);
+  if (pending?.timer) {
+    clearTimeout(pending.timer);
+  }
+  pendingUpdates.delete(item.id);
+
   if (!db) return;
   const path = `items/${item.id}`;
   try {
@@ -213,7 +334,7 @@ export async function saveItemToCloud(item: InventoryItem): Promise<void> {
 }
 
 /**
- * Direct quantity change with immediate Firestore persistence and adjustment audit logging
+ * Direct quantity change with immediate local storage update and coalesced atomic cloud sync
  */
 export async function updateItemQuantityInCloud(
   item: InventoryItem,
@@ -222,9 +343,6 @@ export async function updateItemQuantityInCloud(
   note?: string,
   explicitPreviousQty?: number
 ): Promise<void> {
-  const previousQty = explicitPreviousQty !== undefined ? explicitPreviousQty : item.qty;
-  const change = newQty - previousQty;
-
   const now = Date.now();
   const fullUpdatedItem: InventoryItem = {
     ...item,
@@ -232,7 +350,7 @@ export async function updateItemQuantityInCloud(
     updatedAt: now,
   };
 
-  // 1. Immediately update localStorage so offline/reload is always accurate
+  // 1. Immediately update localStorage and broadcast to local tabs in 0ms
   const currentLocal = loadInventory();
   const itemExistsLocally = currentLocal.some((i) => i.id === item.id);
   const updatedLocal = itemExistsLocally
@@ -242,35 +360,39 @@ export async function updateItemQuantityInCloud(
 
   if (!db) return;
 
-  const path = `items/${item.id}`;
-  try {
-    const itemRef = doc(db, 'items', item.id);
-    const cleanedItem = sanitizeForFirestore(fullUpdatedItem);
-    await setDoc(itemRef, cleanedItem, { merge: true });
-  } catch (err) {
-    handleFirestoreError(err, OperationType.UPDATE, path);
-  }
-
-  // 2. Log adjustment in audit history if quantity actually changed
-  if (change !== 0) {
-    try {
-      const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
-      const adjustment: StockAdjustment = {
-        id: adjId,
-        itemId: item.id,
-        itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
-        itemType: item.type,
-        previousQty,
-        newQty,
-        change,
-        reason,
-        ...(note ? { note } : {}),
-        timestamp: now,
-      };
-      await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
-    } catch (adjErr) {
-      console.warn('Failed to log adjustment record:', adjErr);
+  const existingPending = pendingUpdates.get(item.id);
+  if (existingPending) {
+    if (existingPending.inFlight) {
+      existingPending.queuedTargetQty = newQty;
+      existingPending.queuedItem = fullUpdatedItem;
+      existingPending.queuedReason = reason;
+      existingPending.queuedNote = note;
+    } else {
+      if (existingPending.timer) {
+        clearTimeout(existingPending.timer);
+      }
+      existingPending.targetQty = newQty;
+      existingPending.item = fullUpdatedItem;
+      existingPending.reason = reason;
+      existingPending.note = note;
+      existingPending.timer = setTimeout(() => {
+        flushPendingUpdate(item.id);
+      }, 150);
     }
+  } else {
+    const previousQty = explicitPreviousQty !== undefined ? explicitPreviousQty : item.qty;
+    const newPending: PendingItemUpdate = {
+      item: fullUpdatedItem,
+      targetQty: newQty,
+      initialQty: previousQty,
+      reason,
+      note,
+      inFlight: false,
+      timer: setTimeout(() => {
+        flushPendingUpdate(item.id);
+      }, 150),
+    };
+    pendingUpdates.set(item.id, newPending);
   }
 }
 
@@ -278,6 +400,12 @@ export async function updateItemQuantityInCloud(
  * Delete an inventory item from Firestore
  */
 export async function deleteItemFromCloud(itemId: string): Promise<void> {
+  const pending = pendingUpdates.get(itemId);
+  if (pending?.timer) {
+    clearTimeout(pending.timer);
+  }
+  pendingUpdates.delete(itemId);
+
   if (!db) return;
   const path = `items/${itemId}`;
   try {

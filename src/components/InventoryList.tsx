@@ -1159,17 +1159,24 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                         </div>
                         <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             onClick={() => onQuickQuantityChange(item.id, -1)}
-                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-rose-600 flex items-center justify-center font-bold"
+                            disabled={item.qty <= 0}
+                            className={`w-6 h-6 rounded border border-slate-200 flex items-center justify-center font-bold text-xs transition active:scale-90 ${
+                              item.qty <= 0
+                                ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                                : 'bg-slate-100 hover:bg-slate-200 text-rose-600'
+                            }`}
                           >
-                            -
+                            <Minus className="w-2.5 h-2.5" />
                           </button>
                           <span className="font-bold text-xs text-slate-900 min-w-[20px] text-center">{item.qty}</span>
                           <button
+                            type="button"
                             onClick={() => onQuickQuantityChange(item.id, 1)}
-                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-emerald-700 flex items-center justify-center font-bold"
+                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-emerald-700 flex items-center justify-center font-bold text-xs transition active:scale-90"
                           >
-                            +
+                            <Plus className="w-2.5 h-2.5" />
                           </button>
                           <button
                             type="button"

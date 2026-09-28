@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InventoryItem, ItemType } from './types';
 import { loadInventory, saveInventory, onLocalSyncMessage } from './utils/storage';
 import {
@@ -18,9 +18,15 @@ import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const itemsRef = useRef<InventoryItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'all' | 'tyre' | 'rim'>('tyre');
   const [showOnlyAlerts, setShowOnlyAlerts] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('connecting');
+
+  // Keep itemsRef always synchronously updated
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   // Modals state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -50,6 +56,7 @@ export default function App() {
     // 1. Immediately hydrate with cached local data to avoid empty flash
     const local = loadInventory();
     if (local && local.length > 0) {
+      itemsRef.current = local;
       setItems(local);
     }
 
@@ -60,12 +67,14 @@ export default function App() {
 
     // 3. Instant local cross-tab / window sync
     const unsubLocalSync = onLocalSyncMessage((syncedItems) => {
+      itemsRef.current = syncedItems;
       setItems(syncedItems);
     });
 
     // 4. Listen to live cloud data from Firebase
     const unsubInventory = subscribeToInventory(
       (cloudItems) => {
+        itemsRef.current = cloudItems;
         setItems(cloudItems);
       },
       (err) => {
@@ -82,7 +91,9 @@ export default function App() {
 
   // Quick single piece +/- adjustment inline
   const handleQuickQuantityChange = async (itemId: string, delta: number) => {
-    const currentItem = items.find((i) => i.id === itemId) || loadInventory().find((i) => i.id === itemId);
+    // Read from synchronous itemsRef so rapid clicks in succession always see the latest quantity
+    const currentList = itemsRef.current.length > 0 ? itemsRef.current : (items.length > 0 ? items : loadInventory());
+    const currentItem = currentList.find((i) => i.id === itemId);
     if (!currentItem) return;
 
     const oldQty = currentItem.qty;
@@ -96,11 +107,11 @@ export default function App() {
       updatedAt: now,
     };
 
-    setItems((prev) => {
-      const next = prev.map((it) => (it.id === itemId ? updatedItem : it));
-      saveInventory(next);
-      return next;
-    });
+    // Synchronously update itemsRef immediately so the next rapid click in 5ms reads targetNewQty
+    const nextList = currentList.map((it) => (it.id === itemId ? updatedItem : it));
+    itemsRef.current = nextList;
+    setItems(nextList);
+    saveInventory(nextList);
 
     showToast(
       `${updatedItem.brand} (${updatedItem.size}): ${oldQty} → ${targetNewQty} ${
@@ -108,7 +119,7 @@ export default function App() {
       }`
     );
 
-    // Sync to Firebase Cloud in real-time immediately
+    // Sync to Firebase Cloud in real-time with atomic coalesced queue
     try {
       await updateItemQuantityInCloud(
         updatedItem,
@@ -124,7 +135,8 @@ export default function App() {
 
   // Direct quantity update from modal
   const handleSaveAdjustedQty = async (itemId: string, newQty: number) => {
-    const currentItem = items.find((i) => i.id === itemId) || loadInventory().find((i) => i.id === itemId);
+    const currentList = itemsRef.current.length > 0 ? itemsRef.current : (items.length > 0 ? items : loadInventory());
+    const currentItem = currentList.find((i) => i.id === itemId);
     if (!currentItem) return;
 
     const oldQty = currentItem.qty;
@@ -137,11 +149,10 @@ export default function App() {
       updatedAt: now,
     };
 
-    setItems((prev) => {
-      const next = prev.map((it) => (it.id === itemId ? updatedItem : it));
-      saveInventory(next);
-      return next;
-    });
+    const nextList = currentList.map((it) => (it.id === itemId ? updatedItem : it));
+    itemsRef.current = nextList;
+    setItems(nextList);
+    saveInventory(nextList);
 
     showToast(`Updated ${updatedItem.brand} (${updatedItem.size}) stock to ${newQty}`);
 
@@ -159,9 +170,11 @@ export default function App() {
     editId?: string
   ) => {
     const now = Date.now();
+    const currentList = itemsRef.current.length > 0 ? itemsRef.current : (items.length > 0 ? items : loadInventory());
+
     if (editId) {
       // Edit existing
-      const existing = items.find((i) => i.id === editId) || loadInventory().find((i) => i.id === editId);
+      const existing = currentList.find((i) => i.id === editId);
       const updatedItem: InventoryItem = {
         ...(existing || {}),
         ...itemData,
@@ -169,11 +182,10 @@ export default function App() {
         updatedAt: now,
       } as InventoryItem;
 
-      setItems((prev) => {
-        const next = prev.map((it) => (it.id === editId ? updatedItem : it));
-        saveInventory(next);
-        return next;
-      });
+      const nextList = currentList.map((it) => (it.id === editId ? updatedItem : it));
+      itemsRef.current = nextList;
+      setItems(nextList);
+      saveInventory(nextList);
 
       showToast(`Updated ${itemData.brand} in stock`);
 
@@ -192,11 +204,10 @@ export default function App() {
         updatedAt: now,
       };
 
-      setItems((prev) => {
-        const next = [newItem, ...prev.filter((it) => it.id !== newItemId)];
-        saveInventory(next);
-        return next;
-      });
+      const nextList = [newItem, ...currentList.filter((it) => it.id !== newItemId)];
+      itemsRef.current = nextList;
+      setItems(nextList);
+      saveInventory(nextList);
 
       // Switch category to the added item's type so user sees it immediately
       setActiveCategory(itemData.type);
@@ -217,11 +228,11 @@ export default function App() {
     const target = itemToDelete;
     setItemToDelete(null);
 
-    setItems((prev) => {
-      const next = prev.filter((i) => i.id !== target.id);
-      saveInventory(next);
-      return next;
-    });
+    const currentList = itemsRef.current.length > 0 ? itemsRef.current : (items.length > 0 ? items : loadInventory());
+    const nextList = currentList.filter((i) => i.id !== target.id);
+    itemsRef.current = nextList;
+    setItems(nextList);
+    saveInventory(nextList);
 
     showToast(`Deleted ${target.brand} (${target.size}) from stock`);
 
