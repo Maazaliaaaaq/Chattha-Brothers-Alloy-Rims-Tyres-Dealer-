@@ -82,39 +82,36 @@ export default function App() {
 
   // Quick single piece +/- adjustment inline
   const handleQuickQuantityChange = async (itemId: string, delta: number) => {
-    let targetItem: InventoryItem | undefined;
-    let targetNewQty = 0;
-    let oldQty = 0;
+    const currentItem = items.find((i) => i.id === itemId) || loadInventory().find((i) => i.id === itemId);
+    if (!currentItem) return;
+
+    const oldQty = currentItem.qty;
+    const targetNewQty = Math.max(0, oldQty + delta);
+    if (targetNewQty === oldQty) return;
+
+    const now = Date.now();
+    const updatedItem: InventoryItem = {
+      ...currentItem,
+      qty: targetNewQty,
+      updatedAt: now,
+    };
 
     setItems((prev) => {
-      const target = prev.find((i) => i.id === itemId);
-      if (!target) return prev;
-      oldQty = target.qty;
-      const newQty = Math.max(0, oldQty + delta);
-      if (newQty === oldQty) return prev;
-
-      targetItem = { ...target, qty: newQty, updatedAt: Date.now() };
-      targetNewQty = newQty;
-
-      const next = prev.map((it) =>
-        it.id === itemId ? targetItem! : it
-      );
+      const next = prev.map((it) => (it.id === itemId ? updatedItem : it));
       saveInventory(next);
       return next;
     });
 
-    if (!targetItem) return;
-
     showToast(
-      `${targetItem.brand} (${targetItem.size}): ${oldQty} → ${targetNewQty} ${
-        targetItem.type === 'tyre' ? 'pcs' : 'sets'
+      `${updatedItem.brand} (${updatedItem.size}): ${oldQty} → ${targetNewQty} ${
+        updatedItem.type === 'tyre' ? 'pcs' : 'sets'
       }`
     );
 
     // Sync to Firebase Cloud in real-time immediately
     try {
       await updateItemQuantityInCloud(
-        targetItem,
+        updatedItem,
         targetNewQty,
         delta > 0 ? 'Stock In / Restock' : 'Customer Sale',
         undefined,
@@ -127,28 +124,30 @@ export default function App() {
 
   // Direct quantity update from modal
   const handleSaveAdjustedQty = async (itemId: string, newQty: number) => {
-    let targetItem: InventoryItem | undefined;
-    let oldQty = 0;
+    const currentItem = items.find((i) => i.id === itemId) || loadInventory().find((i) => i.id === itemId);
+    if (!currentItem) return;
+
+    const oldQty = currentItem.qty;
+    if (newQty === oldQty) return;
+
+    const now = Date.now();
+    const updatedItem: InventoryItem = {
+      ...currentItem,
+      qty: newQty,
+      updatedAt: now,
+    };
+
     setItems((prev) => {
-      const target = prev.find((i) => i.id === itemId);
-      if (!target) return prev;
-      oldQty = target.qty;
-      if (newQty === oldQty) return prev;
-      targetItem = { ...target, qty: newQty, updatedAt: Date.now() };
-      const next = prev.map((it) =>
-        it.id === itemId ? targetItem! : it
-      );
+      const next = prev.map((it) => (it.id === itemId ? updatedItem : it));
       saveInventory(next);
       return next;
     });
 
-    if (!targetItem) return;
-
-    showToast(`Updated ${targetItem.brand} (${targetItem.size}) stock to ${newQty}`);
+    showToast(`Updated ${updatedItem.brand} (${updatedItem.size}) stock to ${newQty}`);
 
     // Sync to Firebase Cloud immediately
     try {
-      await updateItemQuantityInCloud(targetItem, newQty, 'Inventory Audit Correction', undefined, oldQty);
+      await updateItemQuantityInCloud(updatedItem, newQty, 'Inventory Audit Correction', undefined, oldQty);
     } catch (err) {
       console.error('Failed to sync adjusted qty to cloud:', err);
     }
@@ -159,19 +158,19 @@ export default function App() {
     itemData: Omit<InventoryItem, 'id' | 'updatedAt'>,
     editId?: string
   ) => {
+    const now = Date.now();
     if (editId) {
       // Edit existing
-      const now = Date.now();
-      let updatedItem: InventoryItem | null = null;
+      const existing = items.find((i) => i.id === editId) || loadInventory().find((i) => i.id === editId);
+      const updatedItem: InventoryItem = {
+        ...(existing || {}),
+        ...itemData,
+        id: editId,
+        updatedAt: now,
+      } as InventoryItem;
+
       setItems((prev) => {
-        const existing = prev.find((i) => i.id === editId);
-        updatedItem = {
-          ...(existing || {}),
-          ...itemData,
-          id: editId,
-          updatedAt: now,
-        } as InventoryItem;
-        const next = prev.map((it) => (it.id === editId ? updatedItem! : it));
+        const next = prev.map((it) => (it.id === editId ? updatedItem : it));
         saveInventory(next);
         return next;
       });
@@ -179,16 +178,13 @@ export default function App() {
       showToast(`Updated ${itemData.brand} in stock`);
 
       // Cloud save
-      if (updatedItem) {
-        try {
-          await saveItemToCloud(updatedItem);
-        } catch (err) {
-          console.error('Failed to sync item update to cloud:', err);
-        }
+      try {
+        await saveItemToCloud(updatedItem);
+      } catch (err) {
+        console.error('Failed to sync item update to cloud:', err);
       }
     } else {
       // Add new
-      const now = Date.now();
       const newItemId = `${itemData.type}-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
       const newItem: InventoryItem = {
         ...itemData,
