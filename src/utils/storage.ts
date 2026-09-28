@@ -8,6 +8,24 @@ const STORAGE_KEYS = {
   INITIALIZED: 'chattha_initialized_flag_v3',
 };
 
+// Cross-tab / cross-window instant synchronization bus
+const syncChannel = typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('chattha_inventory_realtime_sync')
+  : null;
+
+export function onLocalSyncMessage(callback: (items: InventoryItem[]) => void): () => void {
+  if (!syncChannel) return () => {};
+  const handler = (event: MessageEvent) => {
+    if (event.data && event.data.type === 'ITEMS_UPDATED' && Array.isArray(event.data.items)) {
+      callback(event.data.items);
+    }
+  };
+  syncChannel.addEventListener('message', handler);
+  return () => {
+    syncChannel.removeEventListener('message', handler);
+  };
+}
+
 // Purge legacy demo caches from older versions so old demo data never resurfaces
 if (typeof window !== 'undefined' && window.localStorage) {
   try {
@@ -88,6 +106,13 @@ export function saveInventory(items: InventoryItem[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
     setSystemInitialized(true);
+    if (syncChannel) {
+      try {
+        syncChannel.postMessage({ type: 'ITEMS_UPDATED', items });
+      } catch {
+        // ignore
+      }
+    }
   } catch (err) {
     console.error('Failed to save inventory to localStorage', err);
   }

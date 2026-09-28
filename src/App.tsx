@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem, ItemType } from './types';
-import { loadInventory, saveInventory } from './utils/storage';
+import { loadInventory, saveInventory, onLocalSyncMessage } from './utils/storage';
 import {
   subscribeToInventory,
   saveItemToCloud,
@@ -58,7 +58,12 @@ export default function App() {
       setSyncStatus(status);
     });
 
-    // 3. Listen to live cloud data from Firebase
+    // 3. Instant local cross-tab / window sync
+    const unsubLocalSync = onLocalSyncMessage((syncedItems) => {
+      setItems(syncedItems);
+    });
+
+    // 4. Listen to live cloud data from Firebase
     const unsubInventory = subscribeToInventory(
       (cloudItems) => {
         setItems(cloudItems);
@@ -70,6 +75,7 @@ export default function App() {
 
     return () => {
       unsubStatus();
+      unsubLocalSync();
       unsubInventory();
     };
   }, []);

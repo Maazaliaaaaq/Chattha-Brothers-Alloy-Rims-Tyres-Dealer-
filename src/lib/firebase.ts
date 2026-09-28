@@ -1,9 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
-  initializeFirestore,
   getFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   Firestore,
   doc,
   getDocFromServer,
@@ -50,21 +47,7 @@ try {
         ? firebaseConfig.firestoreDatabaseId
         : undefined;
 
-    try {
-      db = initializeFirestore(
-        app,
-        {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager(),
-          }),
-        },
-        dbId
-      );
-    } catch {
-      // If already initialized or persistent cache not supported in environment
-      db = getFirestore(app, dbId);
-    }
-
+    db = getFirestore(app, dbId);
     auth = getAuth(app);
 
     // Non-blocking background connectivity test
