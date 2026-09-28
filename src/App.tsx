@@ -87,11 +87,11 @@ export default function App() {
       const newQty = Math.max(0, oldQty + delta);
       if (newQty === oldQty) return prev;
 
-      targetItem = { ...target };
+      targetItem = { ...target, qty: newQty, updatedAt: Date.now() };
       targetNewQty = newQty;
 
       const next = prev.map((it) =>
-        it.id === itemId ? { ...it, qty: newQty, updatedAt: Date.now() } : it
+        it.id === itemId ? targetItem! : it
       );
       saveInventory(next);
       return next;
@@ -105,7 +105,7 @@ export default function App() {
       }`
     );
 
-    // Sync to Firebase Cloud in real-time
+    // Sync to Firebase Cloud in real-time immediately
     try {
       await updateItemQuantityInCloud(
         targetItem,
@@ -128,9 +128,9 @@ export default function App() {
       if (!target) return prev;
       oldQty = target.qty;
       if (newQty === oldQty) return prev;
-      targetItem = { ...target };
+      targetItem = { ...target, qty: newQty, updatedAt: Date.now() };
       const next = prev.map((it) =>
-        it.id === itemId ? { ...it, qty: newQty, updatedAt: Date.now() } : it
+        it.id === itemId ? targetItem! : it
       );
       saveInventory(next);
       return next;
@@ -140,7 +140,7 @@ export default function App() {
 
     showToast(`Updated ${targetItem.brand} (${targetItem.size}) stock to ${newQty}`);
 
-    // Sync to Firebase Cloud
+    // Sync to Firebase Cloud immediately
     try {
       await updateItemQuantityInCloud(targetItem, newQty, 'Inventory Audit Correction', undefined, oldQty);
     } catch (err) {

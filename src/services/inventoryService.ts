@@ -212,10 +212,8 @@ export async function saveItemToCloud(item: InventoryItem): Promise<void> {
   }
 }
 
-const pendingQtyUpdates = new Map<string, { timer: any; targetQty: number; origQty: number; item: InventoryItem; reason: AdjustmentReason; note?: string }>();
-
 /**
- * Direct quantity change with adjustment audit logging and rapid-tap coalescing
+ * Direct quantity change with immediate Firestore persistence and adjustment audit logging
  */
 export async function updateItemQuantityInCloud(
   item: InventoryItem,
@@ -224,64 +222,56 @@ export async function updateItemQuantityInCloud(
   note?: string,
   explicitPreviousQty?: number
 ): Promise<void> {
-  if (!db) return;
   const previousQty = explicitPreviousQty !== undefined ? explicitPreviousQty : item.qty;
   const change = newQty - previousQty;
-  if (change === 0 && item.qty === newQty) return;
 
-  const existing = pendingQtyUpdates.get(item.id);
-  const effectiveOrigQty = existing ? existing.origQty : previousQty;
-
-  if (existing) {
-    clearTimeout(existing.timer);
-  }
-
-  const performSync = async (finalQty: number, initialQty: number) => {
-    pendingQtyUpdates.delete(item.id);
-    if (!db) return;
-    const now = Date.now();
-    const itemRef = doc(db, 'items', item.id);
-    try {
-      await setDoc(itemRef, { qty: finalQty, updatedAt: now }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `items/${item.id}`);
-    }
-
-    const finalChange = finalQty - initialQty;
-    if (finalChange !== 0) {
-      try {
-        const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
-        const adjustment: StockAdjustment = {
-          id: adjId,
-          itemId: item.id,
-          itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
-          itemType: item.type,
-          previousQty: initialQty,
-          newQty: finalQty,
-          change: finalChange,
-          reason,
-          ...(note ? { note } : {}),
-          timestamp: now,
-        };
-        await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
-      } catch (adjErr) {
-        console.warn('Failed to log adjustment record:', adjErr);
-      }
-    }
+  const now = Date.now();
+  const fullUpdatedItem: InventoryItem = {
+    ...item,
+    qty: newQty,
+    updatedAt: now,
   };
 
-  const timer = setTimeout(() => {
-    performSync(newQty, effectiveOrigQty);
-  }, 200);
+  // 1. Immediately update localStorage so offline/reload is always accurate
+  const currentLocal = loadInventory();
+  const itemExistsLocally = currentLocal.some((i) => i.id === item.id);
+  const updatedLocal = itemExistsLocally
+    ? currentLocal.map((it) => (it.id === item.id ? fullUpdatedItem : it))
+    : [...currentLocal, fullUpdatedItem];
+  saveInventory(updatedLocal);
 
-  pendingQtyUpdates.set(item.id, {
-    timer,
-    targetQty: newQty,
-    origQty: effectiveOrigQty,
-    item,
-    reason,
-    note,
-  });
+  if (!db) return;
+
+  const path = `items/${item.id}`;
+  try {
+    const itemRef = doc(db, 'items', item.id);
+    const cleanedItem = sanitizeForFirestore(fullUpdatedItem);
+    await setDoc(itemRef, cleanedItem, { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, path);
+  }
+
+  // 2. Log adjustment in audit history if quantity actually changed
+  if (change !== 0) {
+    try {
+      const adjId = `adj-${now}-${Math.random().toString(36).slice(2, 7)}`;
+      const adjustment: StockAdjustment = {
+        id: adjId,
+        itemId: item.id,
+        itemSummary: `${item.brand} ${item.model || ''} (${item.size})`.trim(),
+        itemType: item.type,
+        previousQty,
+        newQty,
+        change,
+        reason,
+        ...(note ? { note } : {}),
+        timestamp: now,
+      };
+      await setDoc(doc(db, 'adjustments', adjId), sanitizeForFirestore(adjustment));
+    } catch (adjErr) {
+      console.warn('Failed to log adjustment record:', adjErr);
+    }
+  }
 }
 
 /**
